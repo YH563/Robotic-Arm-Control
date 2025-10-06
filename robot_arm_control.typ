@@ -21,6 +21,7 @@
   ]
 )
 #set list(indent: 1.0em)
+#set enum(indent: 1.0em)
 
 #show heading.where(level:2): it =>{
   set text(fill: blue,size: 16pt, weight: "bold")
@@ -57,7 +58,9 @@
 
 同时为了便于队友的机器人控制理论学习，特记录此笔记，作为个人对相关理论的总结。
 
-为保证通俗易懂，本笔记尽量避开抽象的数学概念以及定理证明，主要针对在机器人控制中可能出现的数学公式以及引理进行论述，同时配合图片说明，以保证直观性。不过需要说明的是，本笔记默认读者有较好的线性代数基础，因此不会重复叙述线性代数基本概念，若部分内容令读者感到生分，还望能自行查找资料查漏补缺。
+为保证通俗易懂，本笔记尽量避开抽象的数学概念以及定理证明，主要针对在机器人控制中可能出现的数学公式以及引理进行论述，同时配合图片说明(笔者尽量，数学部分可能图片较少，因为这部分内容可能无法追求几何直观性，一些几何表述反而会带来误导)，以保证直观性。
+
+不过需要说明的是，本笔记默认读者有较好的线性代数基础，因此不会重复叙述线性代数基本概念，若部分内容令读者感到生分，还望能自行查找资料查漏补缺。
 
 笔者以李理论和螺旋运动作为笔记开篇，叙述在描述空间旋转运动时的常规方法的局限性，进而引出李理论，并基于李理论搭建螺旋理论的框架。螺旋理论是描述机器人运动的基础，同时也为后续机器人运动学提供了统一的数学理论。
 
@@ -142,7 +145,7 @@ $ M = mat(R,t;0,1) $
   $ S O(n)={R in RR^(n times n)|R R^T=I, det(R)=1} $
   而对于 $n$ 维空间中的*特殊欧式群*，记作 $S E(n)$，描述了刚体运动，其中包括平移，旋转以及平移和旋转的耦合
   $ S E(n) = {mat(R,t;0,1)|R in S O(n), t in RR^n} $
-  而这两种群，同时也被称为*李群*(Lie Group，一种即为群也为流形的数学结构)。
+  而这两种群，同时也被称为*李群*(Lie Group，一种既为群也为流形的数学结构)。
 ]
 
 重新思考在三维空间中的旋转操作，确定一个物体的旋转操作只需要确定旋转轴以及绕轴旋转的角度，而这个实际上可以使用一个三维向量来表示，向量的模长表示旋转角度，而该向量的方向表示旋转轴。
@@ -194,7 +197,7 @@ $ dot(R)^T R+R^T dot(R)=O $
 设 $omega^and=R^T dot(R)$，则根据上式可知，$omega^and$ 为一个反对称矩阵(即矩阵对角位相加为0)，则有，
 $ dot(R) = R R^T dot(R)=R omega^and $
 
-假设 $omega^and$ 为不随时间变化的常量，将上式看作常微分方程，发现其解为指数映射，对于矩阵也同样成立，则解为，
+假设 $omega^and$ 为不随时间变化的常量，将上式看作常微分方程，发现其解为指数映射，对于矩阵也同样成立，则解为(也可写作 $e^(omega^and t)$ 的形式)，
 $ R(t) = exp(omega^and t)=sum_(k=0)^infinity (omega^and t)^k/(k!) $
 
 为了便于化简，我们将 $omega^and t$ 重写为 $omega^and theta$，其中 $omega$ 为单位向量，代表了旋转轴方向，而 $theta$ 为旋转角度，再根据反对称矩阵的性质，我们带入即可整理得到，
@@ -212,6 +215,15 @@ $ exp(xi^and) = mat(exp(phi.alt^and),bold(J)rho;0,1) $
 $ bold(J) = (sin abs(phi.alt))/abs(phi.alt) I + (1-(sin abs(phi.alt))/abs(phi.alt)) (phi.alt phi.alt^T)/abs(phi.alt)^2 + (1-cos abs(phi.alt))/abs(phi.alt)^2 phi.alt^and $
 
 因此我们得到了在* $S E(3)$群上的指数映射表达式*，这也是研究机器人运动的重要工具。(证明留作练习，不是很难)
+
+最后我们再介绍几个指数映射的性质，证明同样留作练习。
+
+#t[指数映射性质][
+  + $"d"(exp(A t)) \/"d"t = A e^(A t) = e^(A t) A$
+  + 若 $A = P D P^(-1)$，则有 $exp(A t) = P exp(D t) P^(-1)$
+  + 若有 $A B = B A$，则有 $exp(A)exp(B) = exp(A + B)$ (由于矩阵乘法不具备对称性，所以常规指数映射的性质不再成立)
+  + $(exp(A))^(-1) = exp(-A)$
+][]
 
 #v(0.5em)
 #line(length: 100%)
@@ -241,14 +253,56 @@ $ bold(J) = (sin abs(phi.alt))/abs(phi.alt) I + (1-(sin abs(phi.alt))/abs(phi.al
 
 为了和李群进行区分，$S O(3)$ 对应的李代数为 $frak(s o(3))$，$S E(3)$ 对应的李代数为 $frak(s e(3))$。
 
-在 $frak(s o(3))$ 中，李括号的定义同时也等价于叉乘运算，即对于 $phi.alt_1, phi.alt_2 in RR^3$，满足如下关系，
+在 $frak(s o(3))$ 中，李括号同时也等价于叉乘运算，即对于 $phi.alt_1, phi.alt_2 in RR^3$，满足如下关系，
 $ [phi.alt_1^and, phi.alt_2^and] = (phi.alt_1 times phi.alt_2)^and $
 
 #v(0.5em)
 #line(length: 100%)
 #v(0.5em)
 
+既然存在指数映射，那么也就同时存在对数映射，允许我们从李群元素映射到李代数元素，在 $S O(3)$ 群中，即为从旋转矩阵，得到旋转轴和旋转角度。
 
+根据Rodrigues旋转公式，对于三维旋转矩阵 $R$，有三维单位向量 $omega in RR^3$ 满足如下关系，
+$ R = I + (omega^and) sin theta + (omega^and)^2 (1-cos theta) $
+
+计算 $R$ 的迹，
+$ tr(R) &= tr(I) + tr(omega^and) sin theta + tr((omega^and)^2)(1 - cos theta)\
+&=3 + 0 + tr((omega^and)^2)(1 - cos theta) $
+
+由于 $(omega^and)^2 = omega omega^T - I$，则有
+$ tr((omega^and)^2) = tr(omega omega^T) - tr(I) = 2 abs(omega)^2 - 3 = -2 $
+
+带入可得，
+$ tr(R) = 1 + 2cos theta $
+
+因此，旋转角度为
+$ theta = arccos((tr(R)-1)/2) $
+
+而考虑 $R - R^T$，有
+$ R - R^T &= I + (omega^and) sin theta + (omega^and)^2 (1-cos theta) - (I - (omega^and) sin theta + (omega^and)^2 (1-cos theta))\
+&=2 (omega^and) sin theta $
+
+根据反对称矩阵性质，可以得到旋转轴，
+$ omega = 1/(2 sin theta)mat(R_(32)-R_(23);R_(13)-R_(31);R_(21)-R_(12)) $
+
+因此，我们得到了 $S O(3)$ 群到 $frak(s o)(3)$ 的*对数映射*，即
+$ log(R) = omega^and theta = theta/(2 sin theta)(R - R^T) $
+
+同理，有$S E(3)$ 群到 $frak(s e)(3)$ 的*对数映射*，对于 $S E(3)$ 群中元素，
+$ T = mat(R,t;0,1) $
+
+则有 $frak(s e)(3)$ 中元素 $xi^and$ 满足，
+$ xi^and = mat(log(R),bold(J)^(-1) t;0,0) $
+
+#v(0.5em)
+#line(length: 100%)
+#v(0.5em)
+
+对数映射建立了李群到李代数的联系，使得我们可以将李群上的优化问题转化至李代数空间上，从而利用李代数上的性质进行求解。
+
+=== 伴随表示
+
+在处理机器人运动时，我们需要频繁地进行坐标系变换，而伴随表示就是有效处理坐标系变换的工具。
 
 == 螺旋理论
 
