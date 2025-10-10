@@ -62,7 +62,7 @@
 
 不过需要说明的是，本笔记默认读者有较好的线性代数基础，因此不会重复叙述线性代数基本概念，若部分内容令读者感到生分，还望能自行查找资料查漏补缺。
 
-笔者以李理论和螺旋运动作为笔记开篇，叙述在描述空间旋转运动时的常规方法的局限性，进而引出李理论，并基于李理论搭建螺旋理论的框架。螺旋理论是描述机器人运动的基础，同时也为后续机器人运动学提供了统一的数学理论。
+笔者以李理论和旋量理论作为笔记开篇，叙述在描述空间旋转运动时的常规方法的局限性，进而引出李理论，并基于李理论搭建旋量理论的框架。螺旋理论是描述机器人运动的基础，同时也为后续机器人运动学提供了统一的数学理论。
 
 #pagebreak()
 
@@ -122,8 +122,96 @@ $ M = mat(R,t;0,1) $
 
 === 四元数
 
-在处理三维空间旋转问题中，四元数一直都是一个无法忽略的数学工具，其具有比旋转矩阵更少的参数，且可以避免万向节锁问题，因此四元数在机器人控制中有着广泛的应用。
+在处理三维空间旋转问题中，四元数一直都是一个无法忽略的数学工具，其具有比旋转矩阵更少的参数，且可以避免万向节死锁问题，因此四元数在机器人控制中有着广泛的应用，不过一般仅应用于纯旋转问题。
 
+在描述三维物体的旋转时，我们一般有三种方式，分别为旋转矩阵，欧拉角，以及四元数。
+
+旋转矩阵我们在前一节中已经讲过，就不再重复，我们先简单介绍一下欧拉角。
+
+*欧拉角*是指通过绕固定轴旋转来表示任意方向的旋转的办法，一般固定轴为物体自身的参考系，以下图为例，其中蓝色坐标系为世界坐标系(固定的)，红色坐标系为物体坐标系通过旋转后的新坐标系，而初始物体坐标系与蓝色坐标系重合。
+#figure(
+image("figure/fig3.png", width: 30%),
+caption: [欧拉角示意图])
+
+从图片上可以看出，物体首先绕z轴旋转 $alpha$，将x轴转到 $N$ 方向上，然后绕x轴旋转 $beta$，最后再绕z轴旋转 $gamma$，旋转至新坐标系。(这里的x轴，z轴都是物体坐标系)。
+
+也就是说，实际上的旋转矩阵 $R$ 可以写作为，
+$ R &= R o t(z,gamma) R o t(x,beta) R o t(z,alpha)\
+&=mat(cos gamma, -sin gamma, 0;sin gamma, cos gamma, 0;0, 0, 1)mat(1, 0, 0;0, cos beta, -sin beta;0, sin beta, cos beta)mat(cos alpha, -sin alpha, 0;sin alpha, cos alpha, 0;0, 0, 1) $
+
+欧拉角十分直观，描述旋转也非常方便，但是欧拉角的旋转顺序中，倘若绕第二个轴的旋转 $plus.minus 90^circle.small$，那么会导致其直接丢失一个自由度，进而导致万向节死锁问题的发生(在此不做详细解释，读者可以自行查阅资料)。
+
+而四元数有效解决了欧拉角的问题，在描述纯旋转运动中，四元数往往是一个更好的选择。
+
+#d[四元数][
+  四元数类似于复数的扩展，不过四元数并不满足交换律，其形式为，
+  $ q = w + x i+ y j + z k quad (w,x,y,z in RR) $
+  其中 $i, j, k$ 为虚部，满足，
+  $ i^2 = j^2 = k^2 = -1 $
+
+  并定义四元数共轭为，
+  $ q^* = w - (x i+y j+z k) $
+
+  有四元数模长公式，其中模长为1的四元数称为*单位四元数*
+  $ abs(q)^2 = q q^*=w^2+x^2+y^2+z^2 $
+
+  四元数的逆为，
+  $ q^(-1) = q^* / abs(q)^2 $
+]
+
+根据四元数的定义，我们可以得到四元数的乘法公式，设四元数 $q_1 = w_1 + x_1i + y_1j + z_1k,q_2 = w_2 + x_2i + y_2j + z_2k$，那么 $q_1 q_2$为，
+$ q_1 q_2 &= (w_1 + x_1i + y_1j + z_1k)(w_2 + x_2i + y_2j + z_2k)\
+&=(w_1w_2 - arrow(v_1)dot arrow(v_2))+(w_1 arrow(v_2)+w_2 arrow(v_1)+arrow(v_1)times arrow(v_2)) $
+
+其中，$arrow(v_1), arrow(v_2)$ 分别表示四元数的虚部，$dot,times$ 分别表示内积与外积。
+
+同理可以得到纯虚四元数(实部为0)的乘法结果为，
+$ q_1q_2 = - arrow(v_1)dot arrow(v_2) + arrow(v_1)times arrow(v_2) $
+
+#v(0.5em)
+#line(length: 100%)
+#v(0.5em)
+
+#figure(
+image("figure/fig4.png", width: 30%),
+caption: [旋转示意图])
+
+接下来我们将推导如何利用四元数计算三维空间中的旋转。为便利，我们将四元数写作 $q=[w, arrow(v)]$ 的形式，使用 $w$ 表示实部，使用 $arrow(v)$ 表示虚部。
+
+以上图为例，我们假设旋转轴 $A$ 对应的单位向量为 $arrow(u)$，而 $P$ 为待旋转的向量，假设其为 $arrow(v)$，并将其分解为平行于旋转轴和垂直于旋转轴的两个向量 $arrow(v)_parallel,arrow(v)_ tack.t$，显然有，旋转不改变平行于旋转轴的向量，只改变垂直于旋转轴的向量。
+
+因此，我们可以设旋转后的向量为 $arrow(v)^prime$，那么有
+$ arrow(v)^prime_parallel = arrow(v)_parallel $
+
+而对于垂直于旋转轴的向量，我们可以通过四元数乘法实现。设 $v_tack.t = [0, arrow(v)_tack.t]$，$q = [cos theta, (sin theta) arrow(u)]$，$v^prime_tack.t = [0, arrow(v)^prime_tack.t]$ (不带箭头默认为纯虚四元数)，那么有，
+$ v^prime_tack.t = q v_tack.t $
+
+同时，根据四元数乘法的定义，不难证明以下公式成立，
+$ q^2 = [cos 2theta, (sin 2theta) arrow(u)]\
+q v_parallel = v_parallel q\
+q v_tack.t = v_tack.t q^* $
+
+因此，我们就可以得到四元数旋转公式，
+$ v^prime &= v^prime_parallel + v^prime_tack.t\
+&= v_parallel + q v_tack.t $
+
+由于 $abs(q)=1$，则有
+$ q^(-1) = q^* $
+
+设 $p = [cos theta/2,(sin theta/2)arrow(u)]$，进而有，
+$ q = p^2 $ 
+
+带入四元数旋转公式，
+$ v^prime &=p p^(-1) v_parallel + p^2 v_tack.t\
+&= p v_parallel p^* + p v_tack.t p^*\
+&=p v p^* $
+
+因此，我们得到了四元数旋转公式。对向量 $arrow(v)$ 绕旋转轴 $arrow(u)$ 旋转 $theta$，那么设四元数$p = [cos theta/2,(sin theta/2)arrow(u)]$，则旋转后的结果为，
+$ v^prime = p v p^* $
+
+需要注意的是，旋转 $theta$ 时，参与计算使用的是 $theta/2$。
+
+这样我们就顺利得到了四元数旋转公式，能够发现，四元数只使用了四个参数便可以描述旋转操作，远少于旋转矩阵的参数，同时又避免了万向节死锁问题，所以在描述纯旋转操作时，四元数是一个很好的选择，不仅在描述旋转操作中，在设计旋转运动插值算法时，也会使用四元数进行球面线性插值(Slerp)，实现了平滑插值的效果。
 
 
 == 基础李理论
@@ -216,13 +304,13 @@ $ R(theta)&=I + omega^and (theta-1/(3!)theta^3+1/(5!)theta^5-dots) + (omega^and)
 $ xi^and = mat(phi.alt^and, rho;0,0) $
 
 指数映射的结果为，
-$ exp(xi^and) = mat(exp(phi.alt^and),bold(J)rho;0,1) $
-其中 $bold(J)$ 为雅可比矩阵，满足如下关系式，
-$ bold(J) = (sin abs(phi.alt))/abs(phi.alt) I + (1-(sin abs(phi.alt))/abs(phi.alt)) (phi.alt phi.alt^T)/abs(phi.alt)^2 + (1-cos abs(phi.alt))/abs(phi.alt)^2 phi.alt^and $
+$ exp(xi^and) = mat(exp(phi.alt^and),G rho;0,1) $
+其中矩阵 $G$ 满足如下关系式，
+$ G = (sin abs(phi.alt))/abs(phi.alt) I + (1-(sin abs(phi.alt))/abs(phi.alt)) (phi.alt phi.alt^T)/abs(phi.alt)^2 + (1-cos abs(phi.alt))/abs(phi.alt)^2 phi.alt^and $
 
-因此我们得到了在* $S E(3)$群上的指数映射表达式*，这也是研究机器人运动的重要工具。(证明留作练习，不是很难)
+因此我们得到了在* $S E(3)$群上的指数映射表达式*，这也是研究机器人运动的重要工具。
 
-最后我们再介绍几个指数映射的性质，证明同样留作练习。
+最后我们再介绍几个指数映射的性质，证明留作练习。
 
 #t[指数映射性质][
   + $"d"(exp(A t)) \/"d"t = A e^(A t) = e^(A t) A$
@@ -230,10 +318,6 @@ $ bold(J) = (sin abs(phi.alt))/abs(phi.alt) I + (1-(sin abs(phi.alt))/abs(phi.al
   + 若有 $A B = B A$，则有 $exp(A)exp(B) = exp(A + B)$ (由于矩阵乘法不具备对称性，所以常规指数映射的性质不再成立)
   + $(exp(A))^(-1) = exp(-A)$
 ][]
-
-#v(0.5em)
-#line(length: 100%)
-#v(0.5em)
 
 根据上述推导我们可以知道，在三维空间中，如果我们已知旋转轴以及旋转角度，则可以用一个三维向量表示旋转信息，再基于三维向量生成反对称矩阵，通过指数映射自然生成满足约束的旋转矩阵。
 
@@ -261,6 +345,8 @@ $ bold(J) = (sin abs(phi.alt))/abs(phi.alt) I + (1-(sin abs(phi.alt))/abs(phi.al
 
 在 $frak(s o(3))$ 中，李括号同时也等价于叉乘运算，即对于 $phi.alt_1, phi.alt_2 in RR^3$，满足如下关系，
 $ [phi.alt_1^and, phi.alt_2^and] = (phi.alt_1 times phi.alt_2)^and $
+
+接下来我们将介绍对数映射，从李群空间映射回到李代数空间。
 
 #v(0.5em)
 #line(length: 100%)
@@ -298,11 +384,7 @@ $ log(R) = omega^and theta = theta/(2 sin theta)(R - R^T) $
 $ T = mat(R,t;0,1) $
 
 则有 $frak(s e)(3)$ 中元素 $xi^and$ 满足，
-$ xi^and = mat(log(R),bold(J)^(-1) t;0,0) $
-
-#v(0.5em)
-#line(length: 100%)
-#v(0.5em)
+$ xi^and = mat(log(R),G^(-1) t;0,0) $
 
 对数映射建立了李群到李代数的联系，使得我们可以将李群上的优化问题转化至李代数空间上，从而利用李代数上的性质进行求解。
 
@@ -393,12 +475,7 @@ $ M_B = T M_A T^(-1) $
 
 === Twist(运动旋量)
 
-在上一节中我们提到了空间坐标系和本体坐标系之间的变换，所谓空间坐标系，可以简单理解为固定的世界坐标系，也就是“上帝视角”。而本体坐标系，可以理解为固定在机械臂末端的坐标系，也就是“机器人视角”。我们需要研究在不同坐标系之间速度量的变换。
-
-*PS*：本节数学符号上与前几节略有差异。
-
-// 先留着
-#pagebreak()
+在上一节中我们提到了空间坐标系和本体坐标系之间的变换，所谓空间坐标系，可以简单理解为固定的世界坐标系，也就是“上帝视角”。而本体坐标系，可以理解为固定在机械臂末端的坐标系，也就是“机器人视角”。我们需要研究在不同坐标系之间速度量的变换。(*PS*：本节数学符号上与前几节略有差异。)
 
 #v(0.5em)
 #line(length: 100%)
@@ -451,25 +528,63 @@ $ cal(V)_s^and &= dot(T) T^(-1)\
 &=T cal(V)_b^and T^(-1) $
 
 所以，我们发现，通过伴随表示可以实现两个坐标系旋量之间的变换，即
-$ cal(V)_s^and = "Ad"_T cal(V)_b^and\
-mat(omega_s^and; v_s) = mat(R, 0;p^and R,R) mat(omega_b^and;v_b) $
-
-#v(0.5em)
-#line(length: 100%)
-#v(0.5em)
+$ cal(V)_s^and = "Ad"_T (cal(V)_b^and)\
+mat(omega_s; v_s) = mat(R, 0;p^and R,R) mat(omega_b;v_b) $
 
 根据上述推导，得到了在不同坐标系中旋量的定义，以及如何在空间坐标系和本体坐标系之间进行旋量的变换。
 
-在一些时候，我们并不需要关注真实的角速度和线速度，而是关注角速度和线速度的方向以及在对应方向上旋转和平移的结果，为方便，我们定义了旋量轴(Screw Axis)。
+在一些时候，我们并不需要关注真实的角速度和线速度，而是关注角速度和线速度的方向以及在对应方向上旋转和平移的结果，为方便，我们定义了*旋量轴(Screw Axis)*。
+
+#d[旋量轴(Screw Axis)][
+  对于运动旋量 $cal(V)=mat(omega;v) in RR^6$，为方便，我们将对其进行归一化处理。其中分为两种情况。
+  - 当 $omega$ 不为 $0$ 时，我们定义旋量轴为 
+  $ cal(S)=cal(V)/abs(omega)=mat(omega/abs(omega);v/abs(omega)) in RR^6 $
+  - 当 $omega$ 为 $0$ 时，我们定义旋量轴为
+  $ cal(S)=cal(V)/abs(v)=mat(0;v/abs(v)) in RR^6 $
+
+  最终都可以写作如下形式，$dot(theta) = abs(omega)$ 或 $dot(theta) = abs(v)$
+  $ cal(V) = cal(S)dot(theta) $
+
+  有时也会写作，
+  $ cal(V) = cal(S)theta $
+]
+
+在旋量轴的定义下，我们可以推导一下其指数映射的结果。作为对 $S E(3)$ 群指数映射的回顾。
+
+设运动旋量为 $cal(V)=cal(S)theta$，那么其对应的李代数元素为，
+$ cal(S)^and theta = mat(omega^and, v; 0,0)theta $
+
+其中 $cal(S)$ 为旋量轴，所以有 $abs(omega)=1$。
+
+那么根据指数映射定义，我们可以得到其对应的 $S E(3)$ 群元素为，
+$ T &= exp(cal(S)^and theta)\
+ &= sum_(k=0)^infinity (cal(S)^and theta)^k/(k!)\
+ &= mat(exp(omega^and theta), G(theta) v;0,1) $
+
+根据 $(omega^and)^3=-omega^and$，可以对矩阵 $G(theta)$ 进行化简，
+$ G(theta) &= sum_(k=0)^infinity ((omega^and)^k theta^(k+1))/(k+1)!\
+&=I theta + (omega^and theta^2)/2! + ((omega^and)^2 theta^3)/3! + dots\
+&=I theta + omega^and (theta^2/2!-theta^3/3!+dots) + (omega^and)^2(theta^3/3!-theta^5/5!+dots)\
+&=I theta + (1 - cos theta) omega^and + (theta - sin theta) (omega^and)^2 $
+
+总的来说，指数映射的结果为，
+$ T = exp(cal(S)^and theta) = mat(exp(omega^and theta), (I theta + (1 - cos theta) omega^and + (theta - sin theta) (omega^and)^2) v;0,1) $
+
+若 $abs(omega) = 0$，则退化为，
+$ T = mat(I, v theta; 0, 1) $
+
+而对数映射在此则不再重复。
 
 === Wrench(力旋量)
 
 
-= 机器人运动学
+= 机器人运动学与静力学
 
-== Forward Kinematics
+== Forward Kinematics(前向运动学)
 
-== Inverse Kinematics
+== Statics(静力学)
+
+== Inverse Kinematics(逆向运动学)
 
 = 控制理论
 
