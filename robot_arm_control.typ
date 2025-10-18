@@ -398,7 +398,7 @@ $ xi^and = mat(log(R),G^(-1) t;0,0) $
 
 在处理机器人运动时，我们需要频繁地进行坐标系变换，而伴随表示就是有效处理坐标系变换的工具。
 
-首先是对于坐标变换问题的研究。这种问题广泛存在于机器人运动学中，我们希望从空间坐标系(Space Frame)的变换得到在本体坐标系(Body Frame)的变换，从而得到关节角对末端执行器末端位置的影响。
+首先是对于坐标变换问题的研究。这种问题广泛存在于机器人运动学中，我们希望从空间坐标系(Space Frame，有时也叫基坐标系)的变换得到在本体坐标系(Body Frame，有时也叫末端坐标系)的变换，从而得到关节角对末端执行器末端位置的影响。
 
 假设我们现在有两个相同维度的坐标系 $A,B$，两个坐标系的标准正交基分别为 $bold(alpha),bold(beta)$，且已知坐标变换矩阵 $T$，满足
 $ bold(beta) = T bold(alpha) $
@@ -604,11 +604,84 @@ $ cal(V)_a^T cal(F)_b &= ("Ad"_T_(a b) cal(V)_b)^T cal(F)_a\
 因此有，*力旋量变换公式*为，
 $ cal(F)_b = "Ad"^T_T_(a b) cal(F)_a $
 
+到此，我们的数学基础理论部分就基本搭建完毕，从下一章开始，我们就要开始逐步讲述机器人理论相关的内容了。
+
+#pagebreak()
+
 = 机器人运动学与静力学
 
 == Forward Kinematics(前向运动学)
 
-== Statics(静力学)
+在前向运动学中，我们主要使用PoE(Product of Exponentials)公式进行描述，不过在此之前，我们先以一个示例讲述一下如何推导从基坐标系到末端坐标系的变换矩阵。
+
+#figure(
+  image("figure/fig6.png", width: 60%),
+  caption: [开链前向运动学示例]
+)<openchain>
+
+此时的x轴与y轴构成了二维平面，而z轴垂直于纸面。我们接下来要推导从坐标系{0}到坐标系{4}的变换矩阵，根据@openchain ，可以很轻松得到相邻坐标系间的变换矩阵分别为，
+
+#figure(
+  table(
+    columns: 2,
+    stroke: none,
+    inset: (y:5pt),
+    [$ T_(01) = mat(cos theta_1, -sin theta_1,0,0;sin theta_1, cos theta_1,0,0;0,0,1,0;0,0,0,1) $], [$ T_(12) = mat(cos theta_2, -sin theta_2,0,L_1;sin theta_2, cos theta_2,0,0;0,0,1,0;0,0,0,1) $],
+    [$ T_(23) &= mat(cos theta_3, -sin theta_3,0,L_2;sin theta_3, cos theta_3,0,0;0,0,1,0;0,0,0,1) $],[$ T_(34) = mat(1, 0,0,L_3;0, 1,0,0;0,0,1,0;0,0,0,1) $]
+  )
+)
+
+根据上述变换矩阵，我们可以得到，从坐标系{0}到坐标系{4}的变换矩阵为，
+$ T_(04) = T_(01)T_(12)T_(23)T_(34) $
+
+=== 基于基坐标系的PoE
+
+接下来我们尝试将@openchain 的变换矩阵改写为指数乘积的形式。
+
+想象(这里真的懒的画图了，虽然前边的也没画过)将机械臂完全放平，此时定义为零时，可以得到其变换矩阵为，
+$ M = mat(1, 0, 0, L_1 + L_2 +L_3;0,1,0,0;0,0,1,0;0,0,0,1) $
+
+然后，关节3先进行运动，设其旋转 $theta_3$，我们可以写出其运动旋量轴为，
+$ cal(S)_3^and = mat(omega_3;v_3) = mat(0;0;1;0;-(L_1+L_2);0) $
+
+其中，$v_3 = -omega_3 times p_3 = (0, -(L_1+L_2), 0)^T$
+
+然后，我们就可以得到此时的变换矩阵为，
+$ exp(cal(S)_3^and theta_3)M $
+
+然后，我们再让关节2和关节1进行运动，使用同样的计算方式，那么最终变换矩阵为，
+$ T_(04) = exp(cal(S)_1^and theta_1)exp(cal(S)_2^and theta_2)exp(cal(S)_3^and theta_3)M $
+
+由此，我们就得到了在*基坐标系下的PoE公式*。
+
+#figure(
+  image("figure/fig7.png", width: 80%),
+  caption: [n链前向运动学]
+)
+
+公式表述为，
+$ T = product_(i=1)^n exp(cal(S)_i^and theta_i)M $
+
+=== 基于末端坐标系的PoE
+
+除了在基坐标系下的前向运动学，我们还希望得到在末端坐标系下的PoE公式。
+
+针对这个，我们只需要将基坐标系下的运动旋量转换到末端坐标系下，便可以从基于基坐标系下的PoE公式转变为基于末端坐标系下的PoE公式。
+
+根据运动旋量变换公式，我们可以知道，每个关节在末端坐标系下的运动旋量为，
+$ cal(B)^and_i = "Ad"_(M^(-1))cal(S)_i^and = M^(-1)cal(S)_i^and M $
+
+将其带入基坐标系下的PoE公式中，
+$ T &= product_(i=1)^n exp(cal(S)_i^and theta_i)M\
+&= product_(i=1)^n exp(M cal(B)_i^and M^(-1) theta_i)M\
+&= product_(i=1)^n (M exp(cal(B)_i^and theta_i) M^(-1)) M\
+&= M product_(i=1)^n exp(cal(B)_i^and theta_i) $
+
+由此，我们便得到了在*末端坐标系下的PoE公式*。
+
+到此，前向运动学就基本讲述完毕，还有一种广泛使用的用于描述前向运动学的公式为*Denavit–Hartenberg parameters (D–H parameters)*。这个公式使用的参数量相较于PoE公式要少，但是在理论计算中，我们更倾向于使用PoE公式，所以在此不对此公式进行展开，感兴趣的读者可以自行查阅相关资料。
+
+== Velocity Kinematics and Statics(速度运动学与静力学)
 
 == Inverse Kinematics(逆向运动学)
 
