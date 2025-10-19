@@ -456,7 +456,9 @@ $ M_B = T M_A T^(-1) $
   $ "Ad"_T (xi) = T xi T^(-1) = mat(R v + t times (R omega);R omega) = mat(R, -R t^and;0, R) xi $
 
   可以化简为伴随表示矩阵
-  $ "Ad"_T = mat(R, -R t^and;0, R) in RR^(6 times 6) $
+  $ ["Ad"_T] = mat(R, -R t^and;0, R) in RR^(6 times 6) $
+
+  为将伴随表示与伴随表示矩阵做区分，我们对伴随表示矩阵添加了中括号。
 
   证明留作练习。
 ]
@@ -596,13 +598,13 @@ $ cal(F)_a = mat(m_a;f_a) in RR^6 $
 在不同的坐标系下，功率(功率计算使用内积)应保持不变，因此我们有，
 $ cal(V)_a^T cal(F)_a = cal(V)_b^T cal(F)_b $
 
-根据速度旋量变换公式，$cal(V)_a = "Ad"_(T_(a b)) cal(V)_b$，我们可以得到，
-$ cal(V)_a^T cal(F)_b &= ("Ad"_T_(a b) cal(V)_b)^T cal(F)_a\
-&=cal(V)_b^T "Ad"^T_T_(a b) cal(F)_a\
+根据速度旋量变换公式，$cal(V)_a = ["Ad"_(T_(a b))] cal(V)_b$，我们可以得到，
+$ cal(V)_a^T cal(F)_b &= (["Ad"_T_(a b)] cal(V)_b)^T cal(F)_a\
+&=cal(V)_b^T ["Ad"_T_(a b)]^T cal(F)_a\
 &=cal(V)_b^T cal(F)_b $
 
 因此有，*力旋量变换公式*为，
-$ cal(F)_b = "Ad"^T_T_(a b) cal(F)_a $
+$ cal(F)_b = ["Ad"_T_(a b)] cal(F)_a $
 
 到此，我们的数学基础理论部分就基本搭建完毕，从下一章开始，我们就要开始逐步讲述机器人理论相关的内容了。
 
@@ -682,6 +684,62 @@ $ T &= product_(i=1)^n exp(cal(S)_i^and theta_i)M\
 到此，前向运动学就基本讲述完毕，还有一种广泛使用的用于描述前向运动学的公式为*Denavit–Hartenberg parameters (D–H parameters)*。这个公式使用的参数量相较于PoE公式要少，但是在理论计算中，我们更倾向于使用PoE公式，所以在此不对此公式进行展开，感兴趣的读者可以自行查阅相关资料。
 
 == Velocity Kinematics and Statics(速度运动学与静力学)
+
+在上一节中，我们了解了前向运动学中广泛使用的PoE公式，并推导了其在基坐标系与末端坐标系下的形式，这主要研究的是位置与方向的问题，而在这一节中，我们将研究开链机械臂的速度量也就是运动旋量(twist)以及静力学的相关问题。
+
+=== Jacobian(雅可比矩阵)
+
+设一个物体在 $n$ 维空间中的位置可以表示为 $x(theta) = f(theta(t))$，根据复合函数求导法则，可以得到，
+$ dot(x)(theta) &= (partial f)/(partial theta) ("d"theta)/("d"t)\
+&=J(theta)dot(theta) $
+
+而其中，$J(theta) in RR^(m times n)$ 为*雅可比矩阵*，展开为，
+$ J(theta) = mat((partial f_1)/(partial theta_1), dots, (partial f_1)/(partial theta_n);fence.dotted, dots.down, fence.dotted;(partial f_m)/(partial theta_1), dots, (partial f_m)/(partial theta_n)) $
+
+#e[雅可比矩阵示例][
+  设 $x in RR^2$，且满足如下公式，
+  $ x = mat(x_1;x_2) = mat(L_1 cos theta_1 + L_2 cos(theta_1 + theta_2);L_1 sin theta_1 + L_2 sin(theta_1 + theta_2)) $
+
+  其中 $theta_1, theta_2$ 都是对时间 $t$ 的函数，则 $x$ 对 $t$ 求导，有
+  $ dot(x)_1 = -L_1 dot(theta)_1 sin theta_1 - L_2(dot(theta)_1 + dot(theta)_2) sin(theta_1 + theta_2)\
+  dot(x)_2 = L_1 dot(theta)_1 cos theta_1 + L_2(dot(theta)_1 + dot(theta)_2) cos(theta_1 + theta_2) $
+
+  写成矩阵形式便得到了雅可比矩阵 $dot(x) = J(theta)dot(theta)$ 为
+  $ mat(dot(x)_1;dot(x)_2) = mat(-L_1 sin theta_1 - L_2 sin (theta_1 + theta_2), - L_2 sin (theta_1 + theta_2); L_1 cos theta_1 + L_2 cos(theta_1 + theta_2), L_2 cos(theta_1+theta_2))mat(dot(theta)_1;dot(theta)_2) $
+
+  也可以写作，
+  $ v = J_1(theta)dot(theta)_1 + J_2(theta)dot(theta)_2 $
+]
+
+根据前向运动学的PoE公式，我们知道，基坐标系下的变换矩阵为，
+$ T = product_(i=1)^n exp(cal(S)_i^and theta_i)M $
+
+两边同时对时间求导，我们可以得到，
+$ dot(T) &= (("d")/("d"t)exp(cal(S)_1^and theta_1))dots exp(cal(S)^and_n theta_n) M + exp(cal(S)^and_1 theta_1)(("d")/("d"t)exp(cal(S)_2^and theta_2))dots exp(cal(S)^and_n theta_n) M + dots\
+&=(cal(S)_1^and dot(theta)_1exp(cal(S)_1^and theta_1)) dots exp(cal(S)^and_n theta_n) M + exp(cal(S)^and_1 theta_1)(cal(S)_2^and dot(theta)_2exp(cal(S)_2^and theta_2)) dots exp(cal(S)^and_n theta_n) M + dots $
+
+同时有，
+$ T^(-1) = M^(-1) product_(i=0)^(n-1) exp(-cal(S)_(n-i)^and theta_(n-i)) $
+
+因此可以得到基坐标系下向量形式的运动旋量 $cal(V)_s$ 为，
+$ cal(V)_s = (dot(T)T^(-1))^or = cal(S)_1 dot(theta)_1 + ["Ad"_(exp(cal(S)_1^and theta_1)) ]cal(S)_2 dot(theta)_2 + ["Ad"_(exp(cal(S)_1^and theta_1)exp(cal(S)_2^and theta_2)) ]cal(S)_3 dot(theta)_3 + dots $
+
+同时，对于基坐标系下的运动旋量，我们有雅可比矩阵表示，
+$ cal(V)_s = J_s (theta) dot(theta) = mat(J_(s 1)(theta), J_(s 2)(theta), dots, J_(s n)(theta))mat(dot(theta)_1;dot(theta)_2; fence.dotted; dot(theta)_n) $
+
+因此我们得到了在基坐标系下的雅可比矩阵为，
+$ J_s (theta) = mat(J_(s 1)(theta), J_(s 2)(theta), dots, J_(s n)(theta))\
+J_(s 1) = cal(S)_1\
+J_(s i) = ["Ad"_(H_i)]cal(S)_i quad i = 2, 3, dots, n $
+
+其中，
+$ H_i = product_(j=1)^(i-1) exp(cal(S)_i^and theta_i) $
+
+这样我们便得到了*空间雅可比*。
+
+=== Statics(静力学)
+
+=== Singularity Analysis(奇点分析)
 
 == Inverse Kinematics(逆向运动学)
 
