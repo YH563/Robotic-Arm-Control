@@ -711,6 +711,10 @@ $ J(theta) = mat((partial f_1)/(partial theta_1), dots, (partial f_1)/(partial t
   $ v = J_1(theta)dot(theta)_1 + J_2(theta)dot(theta)_2 $
 ]
 
+#v(0.5em)
+#line(length: 100%)
+#v(0.5em)
+
 根据前向运动学的PoE公式，我们知道，基坐标系下的变换矩阵为，
 $ T = product_(i=1)^n exp(cal(S)_i^and theta_i)M $
 
@@ -730,14 +734,52 @@ $ cal(V)_s = J_s (theta) dot(theta) = mat(J_(s 1)(theta), J_(s 2)(theta), dots, 
 因此我们得到了在基坐标系下的雅可比矩阵为，
 $ J_s (theta) = mat(J_(s 1)(theta), J_(s 2)(theta), dots, J_(s n)(theta))\
 J_(s 1) = cal(S)_1\
-J_(s i) = ["Ad"_(H_i)]cal(S)_i quad i = 2, 3, dots, n $
+J_(s i) = ["Ad"_(H_(s i))]cal(S)_i quad i = 2, 3, dots, n $
 
 其中，
-$ H_i = product_(j=1)^(i-1) exp(cal(S)_i^and theta_i) $
+$ H_(s i) = product_(j=1)^(i-1) exp(cal(S)_j^and theta_j) $
 
 这样我们便得到了*空间雅可比*。
 
+而根据末端坐标系下的PoE公式，
+$ T = M product_(i=1)^n exp(cal(B)_i^and theta_i) $
+
+可以计算得到，末端运动旋量 $cal(V)_b = (T^(-1)dot(T))^or$ 的计算公式，推导同上，证明留作练习。
+
+$ cal(V)_b = (T^(-1)dot(T))^or = cal(B)_n dot(theta)_n + ["Ad"_(exp-(cal(B)_n^and theta_n)) ]cal(B)_(n-1) dot(theta)_(n-1) + dots + ["Ad"_(exp(-cal(B)_n^and theta_n) dots exp(-cal(B)_2^and theta_2)) ]cal(B)_1 dot(theta)_1  $
+
+同时，对于末端坐标系下的运动旋量，我们有雅可比矩阵表示，
+$ cal(V)_b = J_b (theta) dot(theta) = mat(J_(b 1)(theta), J_(b 2)(theta), dots, J_(b n)(theta))mat(dot(theta)_1;dot(theta)_2; fence.dotted; dot(theta)_n) $
+
+因此我们得到了在末端坐标系下的雅可比矩阵为，
+$ J_b (theta) = mat(J_(b 1)(theta), J_(b 2)(theta), dots, J_(b n)(theta))\
+J_(b n) = cal(B)_n\
+J_(s i) = ["Ad"_(H_(b i))]cal(B)_i quad i = 1, 2, dots, n-1 $
+
+其中，
+$ H_(b i) = product_(j=0)^(n-i-1) exp(-cal(B)_(n-j)^and theta_(n-j)) $
+
+这样我们便得到了*本体雅可比*。
+
+#figure(
+  image("figure/fig8.png", width: 90%),
+  caption: [空间雅可比与本体雅可比对比图]
+)
+
+在得到本体雅可比与空间雅可比后，我们可以很自然地通过旋量的相互转换得到雅可比矩阵间的相互转换公式。根据旋量转换公式，
+$ cal(V)_s = ["Ad"_(T_(s b))] cal(V)_b $
+
+将其带入雅可比公式中有，
+$ cal(V)_s = J_s (theta) dot(theta) = ["Ad"_(T_(s b))] cal(V)_b = ["Ad"_(T_(s b))] J_b (theta) dot(theta) $
+
+因此，得到了*雅可比矩阵转换公式*，
+$ J_s (theta) = ["Ad"_(T_(s b))] J_b (theta) $
+
+根据雅可比矩阵，我们可以轻松地根据关节的运动速度 $dot(theta)$ 来得到机械臂末端的运动速度与方向，同样的，我们可以使用雅可比矩阵应用在轨迹规划与逆运动学中。
+
 === Statics(静力学)
+
+当机器人在进行装配、打磨等与环境有接触的任务时，我们就需要去实时计算每个关节应当输出的扭矩的大小，而根据虚功原理以及雅可比矩阵，我们就可以很轻松地计算得到实际的扭矩输出值。
 
 === Singularity Analysis(奇点分析)
 
