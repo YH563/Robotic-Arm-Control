@@ -153,7 +153,7 @@ $ R &= R o t(z,gamma) R o t(x,beta) R o t(z,alpha)\
   四元数类似于复数的扩展，不过四元数并不满足交换律，其形式为，
   $ q = w + x i+ y j + z k quad (w,x,y,z in RR) $
   其中 $i, j, k$ 为虚部，满足，
-  $ i^2 = j^2 = k^2 = -1 $
+  $ i^2 = j^2 = k^2 = i j k = -1 $
 
   并定义四元数共轭为，
   $ q^* = w - (x i+y j+z k) $
