@@ -269,9 +269,9 @@ $ v^prime = p v p^* $
 
 根据反对称矩阵的定义，我们可以得到以下几条重要性质，作为简化运算的依据。
 
-#t[反对称矩阵重要性质][
+#t[反对称矩阵重要性质(三维空间下)][
   - 在三维空间中，叉乘与反对称矩阵乘法等价，即
-  $ (bold(a) times bold(b))^and = a^and bold(b) $
+  $ bold(a) times bold(b) = a^and bold(b) $
   - 反对称矩阵的平方满足如下关系，
   $ (a^and)^2 = -abs(bold(a))^2 I + bold(a)bold(a)^T $
   进而可以得到，若反对称矩阵由单位向量生成，对于反对称矩阵的偶数次幂有，
@@ -321,7 +321,7 @@ $ G = (sin abs(phi.alt))/abs(phi.alt) I + (1-(sin abs(phi.alt))/abs(phi.alt)) (p
 #t[指数映射性质][
   + $"d"(exp(A t)) \/"d"t = A e^(A t) = e^(A t) A$
   + 若 $A = P D P^(-1)$，则有 $exp(A t) = P exp(D t) P^(-1)$
-  + 若有 $A B = B A$，则有 $exp(A)exp(B) = exp(A + B)$ (由于矩阵乘法不具备对称性，所以常规指数映射的性质不再成立)
+  + 若有 $A B = B A$，则有 $exp(A)exp(B) = exp(A + B)$ (由于矩阵乘法不具备交换性，所以常规指数映射的性质不再成立)
   + $(exp(A))^(-1) = exp(-A)$
 ][]
 
@@ -610,7 +610,7 @@ $ cal(F)_b = ["Ad"_T_(a b)] cal(F)_a $
 
 #pagebreak()
 
-= 机器人运动学与静力学
+= 机器人动力学
 
 == Forward Kinematics(前向运动学)
 
@@ -689,12 +689,14 @@ $ T &= product_(i=1)^n exp(cal(S)_i^and theta_i)M\
 
 === Jacobian(雅可比矩阵)
 
-设一个物体在 $n$ 维空间中的位置可以表示为 $x(theta) = f(theta(t))$，根据复合函数求导法则，可以得到，
+设自由度为 $n$ ($n$ 为关节数)的机械臂的末端姿态为 $x in RR^m$ ($m$ 通常为6，包含位置分量与方向分量)，设 $x(theta) = f(theta(t))$，根据复合函数求导法则，可以得到，
 $ dot(x)(theta) &= (partial f)/(partial theta) ("d"theta)/("d"t)\
 &=J(theta)dot(theta) $
 
 而其中，$J(theta) in RR^(m times n)$ 为*雅可比矩阵*，展开为，
 $ J(theta) = mat((partial f_1)/(partial theta_1), dots, (partial f_1)/(partial theta_n);fence.dotted, dots.down, fence.dotted;(partial f_m)/(partial theta_1), dots, (partial f_m)/(partial theta_n)) $
+
+雅可比矩阵包含的是速度的方向信息，而关节速度大小信息由 $dot(theta)$ 所定义，通过雅可比矩阵，我们找到了*关节速度与末端速度之间的联系*。
 
 #e[雅可比矩阵示例][
   设 $x in RR^2$，且满足如下公式，
@@ -781,9 +783,105 @@ $ J_s (theta) = ["Ad"_(T_(s b))] J_b (theta) $
 
 当机器人在进行装配、打磨等与环境有接触的任务时，我们就需要去实时计算每个关节应当输出的扭矩的大小，而根据虚功原理以及雅可比矩阵，我们就可以很轻松地计算得到实际的扭矩输出值。
 
+假设一个自由度为 $n$ 的机械臂，则关节变量为，
+$ theta = (theta_1, theta_2, dots, theta_n)^T $
+
+其末端的位姿为 $x in RR^6$，设末端受到广义力
+$ cal(F) = (f_x, f_y, f_z, tau_x, tau_y, tau_z)^T $
+
+关节力矩为
+$ tau = (tau_1, tau_2, dots, tau_n)^T $
+
+我们考虑在惯性系下，且不考虑重力的情况，若机械臂系统要保持平衡，那么根据虚功原理，所有作用在系统上的力在任意虚位移上做的总虚功为0。
+
+对于关节虚位移有，$delta theta$，对于末端虚位移有，
+$ delta x = J(theta) delta theta $
+
+那么根据虚功原理可得，
+$ tau^T delta theta + cal(F)^T delta x = 0\
+[tau^T + cal(F)^T J(theta)] delta theta = 0 $
+
+化简可得，关节力矩为，
+$ tau = - J^T (theta) cal(F) $
+
+因此我们得到了*机械臂静力学关系*如下(通常省略负号)，
+
+$ tau = J^T (theta) cal(F) $
+
 === Singularity Analysis(奇点分析)
 
+根据之前的讨论，我们知道了可以利用雅可比矩阵从关节速度计算得到末端速度。在这一节中，我们将对雅可比矩阵 $J in RR^(m times n)$ 进行讨论，其性质关系到了机械臂能够运动的最大限度。
+
+对于自由度为 $n$ 的机械臂，其雅可比矩阵的尺寸为 $n times 6$，一般情况下 $n >= 6$，因此，雅可比矩阵的秩满足，
+$ "rank"(J)<=6 $
+
+同时我们知道，雅可比矩阵联系了关节速度与末端速度有，
+$ dot(x) = J(theta) dot(theta) $
+
+而末端速度 $dot(x) in RR^6$，也就意味着，如果要保持上式解的存在性，那么需要有 $"rank"(J)=6$，而当 $"rank"(J)<6$ 时，这意味着末端执行器一定的自由度，导致其会存在“方向的缺失”，在对应方向上的运动是无法产生的。
+
+而这种秩的亏损而导致失去运动自由度的现象就被称为*Singularity(奇点)*，或者说奇点构型，指机器人处于某些特定的关节构型时，其雅可比矩阵的秩会降低。
+
+对于常见的六自由度串联机器人，其奇点可以根据物理意义和位置分为三大类。
+
++ *边界奇点*
+  - 定义：当机器人完全伸展开或完全收缩回来，使得末端执行器处于工作空间的边界时发生。
+  - 物理意义：这类似于人的手臂完全伸直去够一个远处的物体。在这一点，你无法再沿着手臂的方向继续延伸。
++ *内部奇点*
+  - 定义：发生在机器人工作空间内部，通常是由于多个关节轴共线或共面导致的。
+  - 物理意义：机器人“折叠”起来，失去了一个或多个方向的移动能力。
++ *姿态奇点*
+  - 定义：这类奇点不影响末端执行器的位置，但影响其姿态（方向）。
+  - 物理意义：机器人无法绕操作空间的某个特定轴旋转。
+
+对于奇点问题，我们可以通过一些方式来检测是否为奇点。
+
+对于自由度为6的机械臂，雅可比矩阵为方阵，可以通过计算行列式是否为0，得到其是否满秩的结果。但对于机械臂冗余，也就是自由度大于6的情况下，就需要使用数值方式来分析其是否处于奇点位置，而这里就需要使用到*奇异值分解*的内容。对此我们简单补充一下奇异值分解的内容，读者可自行阅读或跳过。
+
+#t[奇异值分解][
+  对于矩阵 $A in RR^(m times n)$，存在如下分解，
+  $ A = U Sigma V^T $
+  其中 $U in RR^(m times m),Sigma in RR^(m times n),V in RR^(n times n)$
+][
+  对于矩阵 $A in RR^(m times n)$，有 $A^T A in RR^(n times n)$ 为半正定矩阵，则其存在 $n$ 个特征值满足，
+  $ lambda_1 >= lambda_2 >= lambda_n >= dots>=0 $
+  设其中非零特征值个数为 $r$，则矩阵 $A^T A$ 的秩为 $r$，同时有 $"rank"(A) = "rank"(A^T A)$，则矩阵 $A$ 的秩也为 $r$。由于 $A^T A$ 是对称矩阵，可以产生 $n$ 个标准正交的特征向量 $bold(v)_i$ (使用施密特正交化)，
+  $ lambda_1, lambda_2, dots, lambda_r eq.not 0->bold(v)_1, bold(v)_2, dots, bold(v)_r\
+  lambda_(r+1), lambda_(r+2), dots, lambda_n = 0->bold(v)_(r+1), bold(v)_(r+2), dots, bold(v)_n\ $
+  
+  进而有，
+  $ A^T A bold(v)_i = lambda_i bold(v)_i quad i = 1,2,dots, n $
+
+  设列向量 $bold(u)_i$ 为
+  $ bold(u)_i = 1/sqrt(lambda_i)A bold(v)_i quad i = 1, 2, dots, r $
+  可以证明列向量组 $bold(u)_i$ 构成了 $RR^m$ 中的一个标准正交向量组，然后对其进行扩充为 $m$ 维空间的标准正交基，进而可以写成矩阵形式，
+  $ A(bold(v)_1, dots, bold(v)_r, bold(v)_(r+1), dots, bold(v)_n)&=(sqrt(lambda_1)bold(u)_1, dots, sqrt(lambda_2)bold(u)_r, 0, dots, 0)\
+  &=(bold(u)_1, dots, bold(u)_r, bold(u)_(r+1), dots, bold(u)_m)mat("diag"(sqrt(lambda_1), dots, sqrt(lambda_r)), O;O,O) $
+
+  从而得到了矩阵的奇异值分解为，
+  $ A = U Sigma V^T $
+
+  并记 $sigma_i = sqrt(lambda_i)$ 为*奇异值*。
+]
+
+对雅可比矩阵进行奇异值分解，
+$ J = U Sigma V^T $
+
+若其非0奇异值的个数小于 $m=6$，那么雅可比矩阵处于奇点构型。我们可以用*可操作度*来判断其是否接近或处于奇点，即计算
+$ w = sqrt(det(J J^T)) = product_(i=1)^m sigma_i $
+
+当 $w$ 越小，机器人越接近奇点。
+
+还可以使用*条件数*衡量矩阵求逆的灵敏度，定义为，
+$ kappa(J) = sigma_("max")/sigma_("min") $
+
+条件数越大，距离奇点越近。
+
+在具体工程中，奇点问题无法被完全规避，但仍有应对的策略。可以在轨迹规划之前，计算一些可能的奇点位置，达到事先避免奇点的目的。也可以使用自由度冗余的机器人，使用多余的自由度来避开奇点。在逆运动学中，会使用阻尼最小二乘法，防止因小奇异值导致的巨大关节速度，但代价是引入了跟踪误差，这是一种在速度和稳定性之间的权衡。
+
 == Inverse Kinematics(逆向运动学)
+
+== Dynamics(动力学)
 
 = 控制理论
 
