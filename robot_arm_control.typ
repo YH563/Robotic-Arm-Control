@@ -997,7 +997,7 @@ $ "d"f = sum_(i=1)^n (partial f)/(partial x_i) "d"x_i $
 改写为矩阵形式，即，
 $ "d"f = ((partial f)/(partial X))^T "d"X $
 
-其中，$(partial f)/(partial X)$ 为我们要求的梯度，而 $"d"X$ 为，
+其中，$(partial f)/(partial X)$ 为我们要求的梯度，有时也记作 $nabla f$ ，而 $"d"X$ 为，
 $ "d"X = ("d"x_1, dots, "d"x_n)^T $
 
 那么我们可以推广到自变量为矩阵时，微分为，
@@ -1019,7 +1019,7 @@ $ tr(A B C) = tr(B C A) = tr(C A B) $
 ]
 
 接下来，我们将根据上述内容，推导雅可比转置法求解逆运动学的公式。设前向运动学函数为 $f:theta in RR^n|->x_d in RR^6 $，目标位姿为 $x_d$ (使用六维矢量进行表示)，定义需要最小化的误差函数为，
-$ E(e) = 1/2 ||e(theta)||^2 = 1/2 e^T (theta) e(theta)\
+$ E(e) = 1/2 norm((theta))^2 = 1/2 e^T (theta) e(theta)\
 e(theta) = x_d - f(theta) $
 
 对 $E(e)$ 求微分有，
@@ -1050,8 +1050,43 @@ $ dot(x) = J(theta) dot(theta) $
 那么目标即为，
 $ dot(theta) = J^(-1) (theta) dot(x) $
 
-不过对于矩阵求逆的问题，多半会有问题，所以接下来介绍几种更加方便通用的求解方法。
+不过雅可比矩阵存在非方阵的情况，直接求逆还是有些难度的，所以接下来介绍几种更加方便通用的求解方法。
 
+- *伪逆法*：当雅可比矩阵不是方阵的时候，将其变为最小二乘问题，找到下式为最小值时的 $dot(theta)$，
+$ "min" 1/2||J dot(theta) - dot(x)||^2 $
+
+可以计算得到矩阵的梯度为
+$ nabla(1/2||J dot(theta) - dot(x)||^2) = J^T (J dot(theta) - dot(x)) $
+
+令其为0，得到正规方程，
+$ J^T J dot(theta) = J^T dot(x) $
+
+则得到关节速度为，
+$ dot(theta) = J^(dagger) dot(x) $
+
+其中，$J^(dagger)$ 是伪逆，由奇异值分解得到，
+$ J^dagger = V Sigma^dagger U^T\
+Sigma^dagger = mat("diag"(1/sigma_1, dots, 1/sigma_r), O;O,O)^T $
+
+- *阻尼最小二乘法*：在伪逆法中，可以发现，当雅可比矩阵处于或接近奇异构型时，会出现 $sigma_i -> 0$ 的问题，而这就会导致最终计算得到的 $abs(dot(theta))->infinity$，就会出现控制失效的问题，因此，我们通过引入阻尼项来进行伪逆计算，防止奇异性问题的发生，对前面的最小二乘问题引入阻尼项，
+$ "min"(norm(J dot(theta) - dot(x))^2 + lambda^2 norm(dot(theta))^2) $
+
+对目标函数展开，
+$ F(dot(theta)) = (J dot(theta) - dot(x))^T (J dot(theta) - dot(x)) + lambda^2 dot(theta)^T dot(theta) $
+
+计算其梯度，
+$ nabla F = 2 J^T (J dot(theta) - dot(x)) + 2 lambda^2 dot(theta) $
+
+令梯度为0，则整理得，
+$ (J^T J + lambda^2 I) dot(theta) = J^T dot(x) $
+
+因为 $J^T J$ 的所有特征值大于等于0，所以 $J^T J + lambda^2 I$ 必然可逆，从而有关节速度解为，
+$ dot(theta) = (J^T J + lambda^2 I)^(-1) J^T dot(x) $
+
+不过，阻尼项的引入，导致了阻尼最小二乘法会产生较大的末端误差和性能损失。它通过牺牲少量末端跟踪精度，换取在奇异区域附近的控制稳定性和可靠性，使得逆速度运动学算法能够在整个工作空间内（包括奇异构型）安全稳定地运行。
+
+- *带动力学优化的逆速度运动学*：
+略
 
 
 == Dynamics(动力学)
