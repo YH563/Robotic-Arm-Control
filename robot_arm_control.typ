@@ -942,7 +942,10 @@ $ exp(omega_4^and theta_4) q - G(theta_4) (omega_4 times q) &= I q + sin theta (
 因此，后三个关节的运动并不会改变腕部中心点坐标，其坐标仅依赖于前三个关节，即，
 $ product_(i=4)^6 exp(cal(S)_i^and theta_i)q = q $
 
-在零位时，我们可以根据目标位姿 $T_d$ 求出目标位姿下腕部中心点的位置 $q_t$，那么根据目标腕部中心点，带入有，
+在零位时，我们可以根据目标位姿 $T_d$ 满足，
+$ product_(i=1)^6 exp(cal(S)^and_i theta_i) = T_d $
+
+求出目标位姿下腕部中心点的位置 $q_t$，那么根据目标腕部中心点，带入有，
 $ q_t = product_(i=1)^3 exp(cal(S)_i^and theta_i)q $
 
 这样可以通过几何法(与具体机械臂构型有关)对前三个关节的角度进行求解，并且，此时相当于确定了目标位姿的位置逆解(确定下来在哪了，但是没有确定面向哪)，然后带入位姿的PoE公式中，我们就有，
@@ -997,7 +1000,7 @@ $ "d"f = ((partial f)/(partial X))^T "d"X $
 其中，$(partial f)/(partial X)$ 为我们要求的梯度，而 $"d"X$ 为，
 $ "d"X = ("d"x_1, dots, "d"x_n)^T $
 
-那么我们可以推广到自变量为标量函数时，微分为，
+那么我们可以推广到自变量为矩阵时，微分为，
 $ "d"f = tr(((partial f)/(partial X))^T "d" X) $
 
 同时结合迹的循环性质，
@@ -1015,7 +1018,41 @@ $ tr(A B C) = tr(B C A) = tr(C A B) $
   $ (partial alpha)/(partial X) = bold(a) bold(b)^T $
 ]
 
-接下来，我们将根据上述内容，推导雅可比转置法求解逆运动学的公式。
+接下来，我们将根据上述内容，推导雅可比转置法求解逆运动学的公式。设前向运动学函数为 $f:theta in RR^n|->x_d in RR^6 $，目标位姿为 $x_d$ (使用六维矢量进行表示)，定义需要最小化的误差函数为，
+$ E(e) = 1/2 ||e(theta)||^2 = 1/2 e^T (theta) e(theta)\
+e(theta) = x_d - f(theta) $
+
+对 $E(e)$ 求微分有，
+$ "d"E(e) = tr(1/2 "d"e^T (theta) e(theta) + 1/2 e^T (theta) "d"e(theta)) = tr(e^T (theta) "d"e(theta)) $
+
+同时，$e(theta)$ 对 $theta$ 求微分有，
+$ "d"e(theta) = - J(theta) "d"theta $
+
+带进去可得，
+$ "d"E(e) = tr(- e^T (theta) J(theta) "d"theta) $
+
+同时有，
+$ "d"E = tr(((partial E)/(partial theta))^T "d" theta) $
+
+因此，
+$ ((partial E)/(partial theta))^T = - J^T (theta) e(theta) $
+
+由此，根据梯度下降法，我们得到了关节角度的迭代公式为，
+$ theta_(i+1) = theta_i + eta J^T (theta_i) e(theta_i) $
+
+=== 逆速度运动学
+
+除了希望根据目标位姿求解关节角度，我们也希望通过目标速度求解关节速度，在很多情况下，我们需要对机械臂运动进行实时微调，这是与机械臂的关节速度实时相关的，因此我们需要研究逆速度运动学，让机器人的运动变得动态、平滑、响应迅速且智能。
+
+因为我们知道末端速度 $dot(x)$ 满足如下关系式，
+$ dot(x) = J(theta) dot(theta) $
+
+那么目标即为，
+$ dot(theta) = J^(-1) (theta) dot(x) $
+
+不过对于矩阵求逆的问题，多半会有问题，所以接下来介绍几种更加方便通用的求解方法。
+
+
 
 == Dynamics(动力学)
 
