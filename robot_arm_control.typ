@@ -23,6 +23,16 @@
 #set list(indent: 1.0em)
 #set enum(indent: 1.0em)
 
+#let equation_counter = counter("equation")
+
+#set math.equation(numbering: n => {
+  equation_counter.step()
+  let chapter = str(counter(heading.where(level: 1)).display())
+  let eq = str(equation_counter.display())
+  "(" + chapter + eq + ")"
+})
+#set math.cases(gap: 1em)
+
 #show heading.where(level:2): it =>{
   set text(fill: blue,size: 16pt, weight: "bold")
   it
@@ -37,18 +47,30 @@
 
 #show heading.where(level: 1): it =>{
   set text(size: 20pt, weight: "bold")
+  equation_counter.update(1)
   it
 }
 
 #let d(name, content) = defn[
   *#name*
-][#v(0.5em)#content]
+][
+  #set math.equation(numbering: none)
+  #v(0.5em)#content
+]
 
-#let t(name, content, proof) = theorem[
-  *#name*
-][#content][#proof]
+#let t(name, content, proof) = theorem[*#name*][
+  #set math.equation(numbering: none)
+  #content
+][
+  #set math.equation(numbering: none)
+  #proof
+]
 
-#let e(name, content) = ex[*#name*][#v(0.5em)#content]
+#let e(name, content) = ex[*#name*][
+  #set math.equation(numbering: none)
+  #v(0.5em)#content
+]
+
 
 #align(center, text(size: 25pt)[机器人理论笔记])
 
@@ -63,6 +85,8 @@
 不过需要说明的是，本笔记默认读者有较好的线性代数基础，因此不会重复叙述线性代数基本概念，若部分内容令读者感到生分，还望能自行查找资料查漏补缺。
 
 笔者以李理论和旋量理论作为笔记开篇，叙述在描述空间旋转运动时的常规方法的局限性，进而引出李理论，并基于李理论搭建旋量理论的框架。旋量理论是描述机器人运动的基础，同时也为后续机器人运动学提供了统一的数学理论。
+
+在第二章中，基于第一章的数学理论部分，讲述了有关机器人运动学理论的内容，包括了前向运动学，逆运动学，速度运动学以及静力学的知识，这一部分讲述了机器人位姿以及机器人速度如何在基坐标系与末端坐标系之间进行相互转换，确保能够精确控制机器人的运动。
 
 #pagebreak()
 
@@ -280,7 +304,7 @@ $ v^prime = p v p^* $
   $ (a^and)^3=-abs(bold(a))^2 a^and $
   进而可以得到，若反对称矩阵由单位向量生成，对于反对称矩阵的奇数次幂有，
   $ (a^and)^(2k-1) = (-1)^(k-1) a^and $
-][]
+][略]
 
 接下来我们仅对 $S O(3)$ 进行讨论，其结论可以自然地推广到 $S E(3)$ 上。
 
@@ -323,7 +347,7 @@ $ G = (sin abs(phi.alt))/abs(phi.alt) I + (1-(sin abs(phi.alt))/abs(phi.alt)) (p
   + 若 $A = P D P^(-1)$，则有 $exp(A t) = P exp(D t) P^(-1)$
   + 若有 $A B = B A$，则有 $exp(A)exp(B) = exp(A + B)$ (由于矩阵乘法不具备交换性，所以常规指数映射的性质不再成立)
   + $(exp(A))^(-1) = exp(-A)$
-][]
+][略]
 
 根据上述推导我们可以知道，在三维空间中，如果我们已知旋转轴以及旋转角度，则可以用一个三维向量表示旋转信息，再基于三维向量生成反对称矩阵，通过指数映射自然生成满足约束的旋转矩阵。
 
@@ -334,6 +358,11 @@ $ G = (sin abs(phi.alt))/abs(phi.alt) I + (1-(sin abs(phi.alt))/abs(phi.alt)) (p
 === 李代数
 
 在这一节中，我们要引入*李代数*的概念，其描述了上一节中所提到的反对称矩阵。
+
+#figure(
+  image("figure/fig11.png", width: 75%),
+  caption: [李群与李代数关系]
+)
 
 #d[李代数][
   李代数定义为李群 $G$ 在幺元 $e$ 处的切空间 $T_e G$ ，记作 $g$。同时在李代数上定义了*李括号*运算 $[X,Y]=X Y - Y X$，且满足如下性质
@@ -377,7 +406,8 @@ $ tr(R) = 1 + 2cos theta $
 $ theta = arccos((tr(R)-1)/2) $
 
 而考虑 $R - R^T$，有
-$ R - R^T &= I + (omega^and) sin theta + (omega^and)^2 (1-cos theta) - (I - (omega^and) sin theta + (omega^and)^2 (1-cos theta))\
+$ R - R^T &= I + (omega^and) sin theta + (omega^and)^2 (1-cos theta) \ 
+&- (I - (omega^and) sin theta + (omega^and)^2 (1-cos theta))\
 &=2 (omega^and) sin theta $
 
 根据反对称矩阵性质，可以得到旋转轴，
@@ -393,8 +423,6 @@ $ T = mat(R,t;0,1) $
 $ xi^and = mat(log(R),G^(-1) t;0,0) $
 
 对数映射建立了李群到李代数的联系，使得我们可以将李群上的优化问题转化至李代数空间上，从而利用李代数上的性质进行求解。
-
-#pagebreak()
 
 === 伴随表示
 
@@ -613,7 +641,7 @@ $ cal(F)_b = ["Ad"_T_(a b)] cal(F)_a $
 
 #pagebreak()
 
-= 机器人动力学
+= 机器人运动学
 
 == Forward Kinematics(前向运动学)
 
@@ -627,12 +655,17 @@ $ cal(F)_b = ["Ad"_T_(a b)] cal(F)_a $
 此时的x轴与y轴构成了二维平面，而z轴垂直于纸面。我们接下来要推导从坐标系{0}到坐标系{4}的变换矩阵，根据@openchain ，可以很轻松得到相邻坐标系间的变换矩阵分别为，
 
 #figure(
+
   table(
     columns: 2,
     stroke: none,
     inset: (y:5pt),
-    [$ T_(01) = mat(cos theta_1, -sin theta_1,0,0;sin theta_1, cos theta_1,0,0;0,0,1,0;0,0,0,1) $], [$ T_(12) = mat(cos theta_2, -sin theta_2,0,L_1;sin theta_2, cos theta_2,0,0;0,0,1,0;0,0,0,1) $],
-    [$ T_(23) &= mat(cos theta_3, -sin theta_3,0,L_2;sin theta_3, cos theta_3,0,0;0,0,1,0;0,0,0,1) $],[$ T_(34) = mat(1, 0,0,L_3;0, 1,0,0;0,0,1,0;0,0,0,1) $]
+    [#set math.equation(numbering: none)
+    $ T_(01) = mat(cos theta_1, -sin theta_1,0,0;sin theta_1, cos theta_1,0,0;0,0,1,0;0,0,0,1) $], [#set math.equation(numbering: none)
+      $ T_(12) = mat(cos theta_2, -sin theta_2,0,L_1;sin theta_2, cos theta_2,0,0;0,0,1,0;0,0,0,1) $],
+    [#set math.equation(numbering: none)
+      $ T_(23) &= mat(cos theta_3, -sin theta_3,0,L_2;sin theta_3, cos theta_3,0,0;0,0,1,0;0,0,0,1) $],[#set math.equation(numbering: none)
+        $ T_(34) = mat(1, 0,0,L_3;0, 1,0,0;0,0,1,0;0,0,0,1) $]
   )
 )
 
@@ -726,22 +759,25 @@ $ J(theta) = mat((partial f_1)/(partial theta_1), dots, (partial f_1)/(partial t
 $ T = product_(i=1)^n exp(cal(S)_i^and theta_i)M $
 
 两边同时对时间求导，我们可以得到，
-$ dot(T) &= (("d")/("d"t)exp(cal(S)_1^and theta_1))dots exp(cal(S)^and_n theta_n) M + exp(cal(S)^and_1 theta_1)(("d")/("d"t)exp(cal(S)_2^and theta_2))dots exp(cal(S)^and_n theta_n) M + dots\
-&=(cal(S)_1^and dot(theta)_1exp(cal(S)_1^and theta_1)) dots exp(cal(S)^and_n theta_n) M + exp(cal(S)^and_1 theta_1)(cal(S)_2^and dot(theta)_2exp(cal(S)_2^and theta_2)) dots exp(cal(S)^and_n theta_n) M + dots $
+$ dot(T) &= (("d")/("d"t)exp(cal(S)_1^and theta_1))dots exp(cal(S)^and_n theta_n) M + \
+&exp(cal(S)^and_1 theta_1)(("d")/("d"t)exp(cal(S)_2^and theta_2))dots exp(cal(S)^and_n theta_n) M + dots\
+&=(cal(S)_1^and dot(theta)_1exp(cal(S)_1^and theta_1)) dots exp(cal(S)^and_n theta_n) M + \
+&exp(cal(S)^and_1 theta_1)(cal(S)_2^and dot(theta)_2exp(cal(S)_2^and theta_2)) dots exp(cal(S)^and_n theta_n) M + dots $
 
 同时有，
 $ T^(-1) = M^(-1) product_(i=0)^(n-1) exp(-cal(S)_(n-i)^and theta_(n-i)) $
 
 因此可以得到基坐标系下向量形式的运动旋量 $cal(V)_s$ 为，
-$ cal(V)_s = (dot(T)T^(-1))^or = cal(S)_1 dot(theta)_1 + ["Ad"_(exp(cal(S)_1^and theta_1)) ]cal(S)_2 dot(theta)_2 + ["Ad"_(exp(cal(S)_1^and theta_1)exp(cal(S)_2^and theta_2)) ]cal(S)_3 dot(theta)_3 + dots $
+$ cal(V)_s &= (dot(T)T^(-1))^or \
+&= cal(S)_1 dot(theta)_1 + ["Ad"_(exp(cal(S)_1^and theta_1)) ]cal(S)_2 dot(theta)_2 + ["Ad"_(exp(cal(S)_1^and theta_1)exp(cal(S)_2^and theta_2)) ]cal(S)_3 dot(theta)_3 + dots $
 
 同时，对于基坐标系下的运动旋量，我们有雅可比矩阵表示，
 $ cal(V)_s = J_s (theta) dot(theta) = mat(J_(s 1)(theta), J_(s 2)(theta), dots, J_(s n)(theta))mat(dot(theta)_1;dot(theta)_2; fence.dotted; dot(theta)_n) $
 
 因此我们得到了在基坐标系下的雅可比矩阵为，
-$ J_s (theta) = mat(J_(s 1)(theta), J_(s 2)(theta), dots, J_(s n)(theta))\
-J_(s 1) = cal(S)_1\
-J_(s i) = ["Ad"_(H_(s i))]cal(S)_i quad i = 2, 3, dots, n $
+$ &J_s (theta) = mat(J_(s 1)(theta), J_(s 2)(theta), dots, J_(s n)(theta))\
+&J_(s 1) = cal(S)_1\
+&J_(s i) = ["Ad"_(H_(s i))]cal(S)_i quad i = 2, 3, dots, n $
 
 其中，
 $ H_(s i) = product_(j=1)^(i-1) exp(cal(S)_j^and theta_j) $
@@ -753,15 +789,16 @@ $ T = M product_(i=1)^n exp(cal(B)_i^and theta_i) $
 
 可以计算得到，末端运动旋量 $cal(V)_b = (T^(-1)dot(T))^or$ 的计算公式，推导同上，证明留作练习。
 
-$ cal(V)_b = (T^(-1)dot(T))^or = cal(B)_n dot(theta)_n + ["Ad"_(exp-(cal(B)_n^and theta_n)) ]cal(B)_(n-1) dot(theta)_(n-1) + dots + ["Ad"_(exp(-cal(B)_n^and theta_n) dots exp(-cal(B)_2^and theta_2)) ]cal(B)_1 dot(theta)_1  $
+$ cal(V)_b &= (T^(-1)dot(T))^or \
+&= cal(B)_n dot(theta)_n + ["Ad"_(exp-(cal(B)_n^and theta_n)) ]cal(B)_(n-1) dot(theta)_(n-1) + dots + ["Ad"_(exp(-cal(B)_n^and theta_n) dots exp(-cal(B)_2^and theta_2)) ]cal(B)_1 dot(theta)_1  $
 
 同时，对于末端坐标系下的运动旋量，我们有雅可比矩阵表示，
 $ cal(V)_b = J_b (theta) dot(theta) = mat(J_(b 1)(theta), J_(b 2)(theta), dots, J_(b n)(theta))mat(dot(theta)_1;dot(theta)_2; fence.dotted; dot(theta)_n) $
 
 因此我们得到了在末端坐标系下的雅可比矩阵为，
-$ J_b (theta) = mat(J_(b 1)(theta), J_(b 2)(theta), dots, J_(b n)(theta))\
-J_(b n) = cal(B)_n\
-J_(s i) = ["Ad"_(H_(b i))]cal(B)_i quad i = 1, 2, dots, n-1 $
+$ &J_b (theta) = mat(J_(b 1)(theta), J_(b 2)(theta), dots, J_(b n)(theta))\
+&J_(b n) = cal(B)_n\
+&J_(s i) = ["Ad"_(H_(b i))]cal(B)_i quad i = 1, 2, dots, n-1 $
 
 其中，
 $ H_(b i) = product_(j=0)^(n-i-1) exp(-cal(B)_(n-j)^and theta_(n-j)) $
@@ -799,7 +836,7 @@ $ tau = (tau_1, tau_2, dots, tau_n)^T $
 
 我们考虑在惯性系下，且不考虑重力的情况，若机械臂系统要保持平衡，那么根据虚功原理，所有作用在系统上的力在任意虚位移上做的总虚功为0。
 
-对于关节虚位移有，$delta theta$，对于末端虚位移有，
+对于关节虚位移有 $delta theta$，对于末端虚位移有，
 $ delta x = J(theta) delta theta $
 
 那么根据虚功原理可得，
@@ -908,13 +945,13 @@ alpha = arccos((L_1^2 + x^2 + y^2-L_2^2)/(2 L_1 sqrt(x^2+y^2))) $
 因此可以得到关节角度为，
 $ theta_1 = arctan(y/x) - alpha quad theta_2 = pi - beta $
 
-不过这种计算方式泛用性并不好，以及我们并不清楚到底在什么情况下才能是用解析法求得解析解，不过，在6自由度机械臂的情况下，存在一个重要的判断依据：
-
-- *Pieper准则*：如果一个*6自由度机械臂*的后三个关节轴*相交于一点*（即构成一个球形腕），或者后三个关节轴*相互平行*，那么该机械臂的逆运动学具有封闭解析解。
-
 #v(0.5em)
 #line(length: 100%)
 #v(0.5em)
+
+这种计算方式泛用性并不好，以及我们并不清楚到底在什么情况下才能是用解析法求得解析解，不过，在6自由度机械臂的情况下，存在一个重要的判断依据：
+
+- *Pieper准则*：如果一个*6自由度机械臂*的后三个关节轴*相交于一点*（即构成一个球形腕），或者后三个关节轴*相互平行*，那么该机械臂的逆运动学具有封闭解析解。
 
 接下来就后三个关节轴相交于一点的情况进行分析，
 
@@ -961,6 +998,10 @@ $ product_(i=4)^6 exp(cal(S)_i^and theta_i) = [product_(i=1)^3 exp(cal(S)_i^and 
 
 除了解析法，我们还会使用一些数值方法对逆运动学进行求解，我们将介绍几个比较常见的数值求解方法。
 
+#v(0.5em)
+#line(length: 100%)
+#v(0.5em)
+
 - *Newton–Raphson法*：将待求解的逆运动学方程写为一种通用格式，$g(theta)=0,theta in RR^n$，那么对函数进行一阶泰勒展开可以得到，
 $ g(theta) = g(theta_0) + (partial g)/(partial theta)|_(theta=theta_0) (theta - theta_0) + omicron(theta^2) $
 
@@ -971,6 +1012,10 @@ $ theta = theta_0 - ((partial g)/(partial theta)|_(theta=theta_0))^(-1) g(theta_
 $ theta_(i+1) = theta_i - ((partial g)/(partial theta)|_(theta=theta_i))^(-1) g(theta_i) $
 
 可以不断计算到约定误差下，但是在奇点构型或非方阵的情况下，无法使用。
+
+#v(0.5em)
+#line(length: 100%)
+#v(0.5em)
 
 - *雅可比转置法*：雅可比转置法，其本质为梯度下降法的应用。在介绍这个方法前，首先讲述一下何为梯度下降法。
 
@@ -1009,6 +1054,7 @@ $ tr(A B C) = tr(B C A) = tr(C A B) $
 那么我们就可以很简单地求解矩阵的梯度了，接下来给出一个简单的例子。
 
 #e[矩阵导数示例][
+  考虑如下函数，
   $ alpha = bold(a)^T X bold(b) $
   对其两边同时求微分有，
   $ "d"alpha = tr(bold(a)^T "d" X bold(b)) = tr(bold(b)bold(a)^T"d" X ) $
@@ -1052,6 +1098,10 @@ $ dot(theta) = J^(-1) (theta) dot(x) $
 
 不过雅可比矩阵存在非方阵的情况，直接求逆还是有些难度的，所以接下来介绍几种更加方便通用的求解方法。
 
+#v(0.5em)
+#line(length: 100%)
+#v(0.5em)
+
 - *伪逆法*：当雅可比矩阵不是方阵的时候，将其变为最小二乘问题，找到下式为最小值时的 $dot(theta)$，
 $ "min" 1/2||J dot(theta) - dot(x)||^2 $
 
@@ -1067,6 +1117,10 @@ $ dot(theta) = J^(dagger) dot(x) $
 其中，$J^(dagger)$ 是伪逆，由奇异值分解得到，
 $ J^dagger = V Sigma^dagger U^T\
 Sigma^dagger = mat("diag"(1/sigma_1, dots, 1/sigma_r), O;O,O)^T $
+
+#v(0.5em)
+#line(length: 100%)
+#v(0.5em)
 
 - *阻尼最小二乘法*：在伪逆法中，可以发现，当雅可比矩阵处于或接近奇异构型时，会出现 $sigma_i -> 0$ 的问题，而这就会导致最终计算得到的 $abs(dot(theta))->infinity$，就会出现控制失效的问题，因此，我们通过引入阻尼项来进行伪逆计算，防止奇异性问题的发生，对前面的最小二乘问题引入阻尼项，
 $ "min"(norm(J dot(theta) - dot(x))^2 + lambda^2 norm(dot(theta))^2) $
@@ -1085,14 +1139,118 @@ $ dot(theta) = (J^T J + lambda^2 I)^(-1) J^T dot(x) $
 
 不过，阻尼项的引入，导致了阻尼最小二乘法会产生较大的末端误差和性能损失。它通过牺牲少量末端跟踪精度，换取在奇异区域附近的控制稳定性和可靠性，使得逆速度运动学算法能够在整个工作空间内（包括奇异构型）安全稳定地运行。
 
-- *带动力学优化的逆速度运动学*：
-略
+#v(0.5em)
+#line(length: 100%)
+#v(0.5em)
+
+- *带动力学优化的逆速度运动学*：这部分内容需要动力学的前置知识。
+
+#pagebreak()
+
+= 机器人动力学
+
+#v(0.5em)
+在这一章节中，我们研究的核心将转为力和力矩在机器人身上的应用，同样的，机器人运动学也会分为前向动力学与逆动力学两个部分，即根据关节力推导末端力以及根据末端力推导关节力。而要对机器人动力学进行建模，业界有两种主流方法，分别是*Lagrangian Formulation(拉格朗日方程)*与*Newton–Euler formulation(牛顿-欧拉公式)*，接下来我们将分别介绍这两类公式。
+
+== 拉格朗日方程
+
+这一节我们从拉格朗日量的定义出发，通过一个简单示例了解并建立机器人学的动力学方程，至于拉格朗日量的推导，在此不做了解，将其作为结论直接使用即可。
+
+=== 拉格朗日方程的简单示例
+
+在牛顿力学后，变分法的出现，拉格朗日等人构建了一种全新的力学架构。牛顿力学关注的是矢量性的力，倾向于通过几何法研究受力系统。而拉格朗日力学，则是基于最小作用量原理以及变分法研究受力系统，避开了复杂的矢量分解和几何分析。
+
+#d[拉格朗日方程][
+  对于一个自由度为 $n$ 的系统，其状态可以使用 $n$ 个广义坐标 $q_1, q_2, dots, q_n$ 来描述，对于旋转关节，$q_i$ 就是角度，对于平移关节，$q_i$ 就是位移。我们定义*拉格朗日量*为，
+
+  $ cal(L)=cal(K)(q, dot(q)) - cal(P)(q) $
+
+  其中，$q = (q_1, q_2, dots, q_n)^T$ 是广义坐标向量，$dot(q) = (dot(q)_1, dot(q)_2, dots, dot(q)_n)^T$ 是广义速度向量，$cal(K)$ 是系统的总动能，$cal(P)$ 是系统的总势能。
+
+  则完整的*拉格朗日方程*如下，
+  $ "d"/("d"t)((partial cal(L))/(partial dot(q))) - (partial cal(L))/(partial q) = tau $
+
+  其中，$tau$ 是作用在广义坐标上的广义力，对于旋转关节就是扭矩，对于平移关节就是力。
+]
+
+#v(0.5em)
+#line(length: 100%)
+#v(0.5em)
+
+接下来，我们用一个简单的例子来讲解这部分知识。
+
+#figure(
+  image("figure/fig12.png", width: 35%),
+  caption: [一个平面二连杆机械臂]
+)
+
+- 设连杆1长度为 $L_1$，转轴1到质心的距离为 $L_(c 1)$，质量为 $m_1$，绕转轴1的转动惯量为 $I_1$。
+- 设连杆2长度为 $L_2$，转轴2到质心的距离为 $L_(c 2)$，质量为 $m_2$，绕转轴1的转动惯量为 $I_2$。
+- 设广义坐标 $q = (q_1, q_2)^T$，其中 $q_1,q_2$ 为两个连杆的旋转角度。
+
+首先，计算两个连杆的质心速度以及角速度。连杆1的质心坐标为，
+$ mat(x_1;y_1) = mat(L_(c 1)cos q_1;L_(c 1)sin q_1) $
+
+则其质心速度和角速度分别为，
+$ mat(dot(x)_1;dot(y)_1) = mat(-L_(c 1) sin q_1;L_(c 1)cos q_1)dot(q)_1\
+omega_1 = dot(q)_1 $
+
+那么有，连杆1的动能为，
+$ cal(K)_1 &= 1/2 m_1 v_1^2 + 1/2 I_1 omega_1^2 \
+&= 1/2 m_1 (dot(x_1)^2 + dot(y_1)^2) + 1/2 I_1 dot(q)_1^2\
+&=1/2 (m_1 L_(c 1)^2 + I_1) dot(q)_1^2 $
+
+同理，可以得到连杆2的动能为，
+$ cal(K)_2 &= 1/2 m_2 v_2^2 + 1/2 I_1 omega_2^2 \
+&= 1/2 m_2 (L_1^2 dot(q)_1^2 + L_(c 2)^2(dot(q)_1^2 + dot(q)_2^2) + 2L_1 L_(c 2)[dot(q)_1(dot(q)_1 + dot(q)_2)]cos q_2 ) + 1/2 I_2 (dot(q)_1 + dot(q)_2)^2 $
+
+整理得到动能项，并改写为二次型，
+$ cal(K) = cal(K)_1 + cal(K)_2 = 1/2 mat(dot(q)_1, dot(q)_2)mat(M_11,M_12;M_21,M_22)mat(dot(q)_1;dot(q)_2) = 1/2 dot(q)^T M dot(q) $
+
+其中 $M$ 为质量矩阵，满足，
+$ &M_11 = m_1L_(c 1)^2 + I_1 + m_2(L_1^2 + L_(c 2)^2 + 2 L_1L_(c 2 ) cos q_2) + I_2\
+&M_12 = M_21 = m_2(L_(c 2)^2 + L_1 L_(c 2)cos q_2) + I_2\
+&M_22 = m_2 L_(c 2)^2 + I_2 $
+
+以转轴1为势能零点，因此，整个系统的势能为，
+$ cal(P) = m_1 g (L_(c 1)sin q_1) + m_2 g (L_1 sin q_1 + L_(c 2)sin (q_1 + q_2)) $
+
+然后可以得到拉氏量为，
+$ cal(L) = cal(K) - cal(P) $
+
+带入拉格朗日方程，便可以计算两个连杆上分别受到的力矩为，
+$ cases("d"/("d"t)((partial cal(L))/(partial dot(q)_1)) - (partial cal(L))/(partial q_1) = tau_1, "d"/("d"t)((partial cal(L))/(partial dot(q)_2)) - (partial cal(L))/(partial q_2) = tau_2) $
+
+具体结果的推导过于冗长，留给读者自行推导，最终可以整理成如下形式，
+$ mat(M_11,M_12;M_21,M_22)mat(dot.double(q)_1;dot.double(q)_2) + mat(-h dot(q)_2, -h(dot(q)_1 + dot(q)_2); - h dot(q)_1, 0)mat(dot(q)_1; dot(q)_2) + mat(G_1;G_2) = mat(tau_1;tau_2) $
+
+其中，
+$ h = m_2 L_1 L_(c 2)sin q_2\
+G_1 = (partial cal(P))/(partial q_1) = m_1g L_(c 1)cos q_1 + m_2 g [L_1 cos q_1 + L_(c 2)cos(q_1 + q_2)]\
+G_2 = (partial cal(P))/(partial q_2) = m_2 g L_(c 2)cos(q_1 + q_2) $
+
+到此，我们便对拉格朗日方程的建立与使用有了一个初步的认识，只需要将拉格朗日量写出，然后带入拉格朗日方程中，即可求出对每个独立的广义坐标作用的广义力。
+
+=== 机器人动力学拉格朗日标准形式
+
+在上一节中，我们使用拉格朗日方程研究了一个简单的二连杆机械臂的受力情况，根据拉格朗日方程，我们最终可以将机器人动力学整理为一个*标准形式*，
+$ M(q)dot.double(q) + C(q, dot(q))dot(q) + G(q) = tau $
+
+其中方程右边描述了系统受到的广义力，而方程左边分为了三项，接下来逐项进行解释。
+
+- *惯性项* $M(q)dot.double(q)$：这一项描述了机器人运动时需要克服的惯性，其中 $M(q)$ 为质量矩阵，而 $dot.double(q)$ 是广义加速度。质量矩阵的对角线元素是单个关节加速时所需的有效惯性，而非对角线元素则描述了不同关节间加速时的惯性耦合。
+- *离心力和科氏力项* $C(q, dot(q))dot(q)$：这一项，描述的是由于系统旋转，而产生的在非惯性系下由于惯性作用所产生的效应，可以理解为“惯性力”。其中分为了离心力项与科氏力(科里奥利力，即地转偏向力)项，对于 $dot(q)_i^2$ 项，其描述的是物体受到的离心力，物体在非惯性系下有“向外飞”的效应，而对于 $dot(q)_i dot(q)_j$ 项，其描述的是物体受到的科氏力，总的来说，这一项描述了在非惯性系参考系下引入的“惯性力”。
+- *重力项* $G(q)$：这一项描述了机械臂重力产生的扭矩。
+
+机器人动力学的拉格朗日标准形式给出了程式化的动力学描述，使其非常适合进行符号推导，同时避开了系统内部复杂关节约束力的计算分析，十分优雅简洁。但是其计算效率相较于牛顿-欧拉法较低，所以更适合用于理论分析与控制器设计，而非实时控制计算，因此其在计算扭矩控制，动力学仿真以及参数辨识等领域有广泛的应用。
+
+== 牛顿-欧拉公式
 
 
-== Dynamics(动力学)
-
-= 控制理论
 
 = 轨迹生成
 
-= 姿态估计
+= 运动规划
+
+= 机器人控制
+
