@@ -1153,7 +1153,7 @@ $ dot(theta) = (J^T J + lambda^2 I)^(-1) J^T dot(x) $
 = 机器人动力学
 
 #v(0.5em)
-在这一章节中，我们研究的核心将转为力和力矩在机器人身上的应用，同样的，机器人运动学也会分为前向动力学与逆动力学两个部分，即根据关节力推导末端力以及根据末端力推导关节力。而要对机器人动力学进行建模，业界有两种主流方法，分别是*Lagrangian Formulation(拉格朗日方程)*与*Newton–Euler formulation(牛顿-欧拉公式)*，接下来我们将分别介绍这两类公式。
+在这一章节中，我们研究的核心将转为力和力矩在机器人身上的应用，同样的，机器人运动学也会分为前向动力学与逆动力学两个部分，即根据关节力推导末端力以及根据末端力推导关节力。而要对机器人动力学进行建模，业界有两种主流方法，分别是*Lagrangian Formulation(拉格朗日方程)*与*Newton–Euler formulation(牛顿-欧拉公式)*，接下来我们将分别介绍这两类公式，核心讲述围绕后者的实现。
 
 == 拉格朗日方程
 
@@ -1171,9 +1171,9 @@ $ dot(theta) = (J^T J + lambda^2 I)^(-1) J^T dot(x) $
   其中，$q = (q_1, q_2, dots, q_n)^T$ 是广义坐标向量，$dot(q) = (dot(q)_1, dot(q)_2, dots, dot(q)_n)^T$ 是广义速度向量，$cal(K)$ 是系统的总动能，$cal(P)$ 是系统的总势能。
 
   则完整的*拉格朗日方程*如下，
-  $ "d"/("d"t)((partial cal(L))/(partial dot(q))) - (partial cal(L))/(partial q) = H $
+  $ "d"/("d"t)((partial cal(L))/(partial dot(q))) - (partial cal(L))/(partial q) = tau $
 
-  其中，$H$ 是作用在*广义坐标*上的*广义力*，对于旋转关节就是扭矩，对于平移关节就是力。
+  其中，$tau$ 是作用在*广义坐标*上的*广义力*，对于旋转关节就是扭矩，对于平移关节就是力。
 ]
 
 #v(0.5em)
@@ -1222,10 +1222,10 @@ $ cal(P) = m_1 g (L_(c 1)sin q_1) + m_2 g (L_1 sin q_1 + L_(c 2)sin (q_1 + q_2))
 $ cal(L) = cal(K) - cal(P) $
 
 带入拉格朗日方程，便可以计算两个连杆上分别受到的力矩为，
-$ cases("d"/("d"t)((partial cal(L))/(partial dot(q)_1)) - (partial cal(L))/(partial q_1) = h_1, "d"/("d"t)((partial cal(L))/(partial dot(q)_2)) - (partial cal(L))/(partial q_2) = h_2) $
+$ cases("d"/("d"t)((partial cal(L))/(partial dot(q)_1)) - (partial cal(L))/(partial q_1) = tau_1, "d"/("d"t)((partial cal(L))/(partial dot(q)_2)) - (partial cal(L))/(partial q_2) = tau_2) $
 
 具体结果的推导过于冗长，留给读者自行推导，最终可以整理成如下形式，
-$ mat(M_11,M_12;M_21,M_22)mat(dot.double(q)_1;dot.double(q)_2) + mat(-b dot(q)_2, -b(dot(q)_1 + dot(q)_2); - b dot(q)_1, 0)mat(dot(q)_1; dot(q)_2) + mat(G_1;G_2) = mat(h_1;h_2) $
+$ mat(M_11,M_12;M_21,M_22)mat(dot.double(q)_1;dot.double(q)_2) + mat(-b dot(q)_2, -b(dot(q)_1 + dot(q)_2); - b dot(q)_1, 0)mat(dot(q)_1; dot(q)_2) + mat(G_1;G_2) = mat(tau_1;tau_2) $
 
 其中，
 $ b = m_2 L_1 L_(c 2)sin q_2\
@@ -1237,7 +1237,7 @@ G_2 = (partial cal(P))/(partial q_2) = m_2 g L_(c 2)cos(q_1 + q_2) $
 === 机器人动力学拉格朗日标准形式
 
 在上一节中，我们使用拉格朗日方程研究了一个简单的二连杆机械臂的受力情况，根据拉格朗日方程，我们最终可以将机器人动力学整理为一个*标准形式*，
-$ M(q)dot.double(q) + C(q, dot(q))dot(q) + G(q) = H $
+$ M(q)dot.double(q) + C(q, dot(q))dot(q) + G(q) = tau $
 
 我们接下来对该形式进行一个简单的推导证明。
 
@@ -1248,18 +1248,18 @@ $ cal(L)(q, dot(q)) = cal(K)(q, dot(q)) - cal(P)(q) $
 $ cal(K) = 1/2 dot(q)^T M(theta) dot(q) $
 
 再将其带入拉格朗日方程中，可以写出广义力的表达式为，
-$ h_i = sum_(j=1)^n m_(i j)dot.double(q)_j + sum_(j=1)^n sum_(k=1)^n Gamma_(i j k)(q)dot(q)_j dot(q)_k + (partial cal(P))/(partial q_i) quad i = 1,dots, n $
+$ tau_i = sum_(j=1)^n m_(i j)dot.double(q)_j + sum_(j=1)^n sum_(k=1)^n Gamma_(i j k)(q)dot(q)_j dot(q)_k + (partial cal(P))/(partial q_i) quad i = 1,dots, n $
 
 其中，
 $ Gamma_(i j k) = 1/2 ((partial m_(i j))/(partial q_k)+(partial m_(i k))/(partial q_j)-(partial m_(j k))/(partial q_i)) $
 
 最终，我们将其改写为矩阵形式，即
-$ M(q)dot.double(q) + C(q, dot(q))dot(q) + G(q) = H $
+$ M(q)dot.double(q) + C(q, dot(q))dot(q) + G(q) = tau $
 
 其中，
 $ c_(i j)(q, dot(q)) = sum_(k=1)^n Gamma_(i j k)(q) dot(q)_k $
 
-其中方程右边描述了系统受到的广义力，而方程左边分为了三项，接下来逐项进行解释。
+其中方程(3.17)右边描述了系统受到的广义力，而方程左边分为了三项，接下来逐项进行解释。
 
 - *惯性项* $M(q)dot.double(q)$：这一项描述了机器人运动时需要克服的惯性，其中 $M(q)$ 为质量矩阵，而 $dot.double(q)$ 是广义加速度。质量矩阵的对角线元素是单个关节加速时所需的有效惯性，而非对角线元素则描述了不同关节间加速时的惯性耦合。
 - *科氏力项* $C(q, dot(q))dot(q)$：这一项，描述的是由于系统旋转，而产生的在非惯性系下由于惯性作用所产生的效应，可以理解为“惯性力”。其中分为了离心力项与科氏力(科里奥利力，即地转偏向力)项，对于 $dot(q)_i^2$ 项，其描述的是物体受到的离心力，物体在非惯性系下有“向外飞”的效应，而对于 $dot(q)_i dot(q)_j$ 项，其描述的是物体受到的科氏力，总的来说，这一项描述了在非惯性系参考系下引入的“惯性力”。
@@ -1274,6 +1274,108 @@ $ c_(i j)(q, dot(q)) = sum_(k=1)^n Gamma_(i j k)(q) dot(q)_k $
 === 传统牛顿欧拉公式推导
 
 因为机器人涉及到多个刚体之间的相互作用以及相互影响，所以我们要从一个简单的刚体运动的例子逐步推导牛顿欧拉公式。
+
+#v(0.5em)
+#line(length: 100%)
+#v(0.5em)
+
+考虑由 $n$ 个质点组成的刚体，考虑在体坐标系{b}下，满足质心位于原点，且坐标系跟随刚体进行运动，其中 $r_i = (x_i, y_i, z_i)^T$，
+$ sum_i frak(m)_i r_i = 0 $
+
+假设刚体以速度 $cal(V)_b = (omega_b, v_b)^T$ 运动，则第 $i$ 个质点的位置对时间的导数和二阶导为，
+$ dot(r)_i = v_b + omega_b times r_i\
+dot.double(r)_i = dot(v)_b + dot(omega)_b times r_i + omega_b times (v_b + omega_b times r_i) $
+
+对于叉乘，我们重写为反对称矩阵形式，即，
+$ dot.double(r)_i = dot(v)_b + dot(omega)_b^and r_i + omega_b^and v_b + (omega_b^and)^2 r_i $
+
+因此可以得到其受到的力与力矩的表达式，
+$ f_i = frak(m)_i dot.double(r)_i\
+m_i = r_i^and f_i $
+
+从而，我们可以将刚体所受到的力旋量写出，
+$ cal(F)_b = mat(m_b;f_b) = mat(sum_i m_i; sum_i f_i) $
+
+根据反对称矩阵性质，以及刚体质心位于{b}原点，对其进行化简，首先是根据牛顿第二定律，得到力 $f_b$，
+$ f_b &= sum_i frak(m)_i [dot(v)_b + dot(omega)_b^and r_i + omega_b^and v_b + (omega_b^and)^2 r_i]\
+&=sum_i frak(m)_i (dot(v)_b + omega_b^and v_b) - sum_i frak(m)_i r^and_i dot(omega)_b + sum_i m_i r_i^and omega_b^and omega_b\
+&=frak(m)(dot(v)_b + omega^and v_b) $
+
+同理，对于力矩 $m_b$，
+$ m_b &= sum_i frak(m)_i r_i^and [dot(v)_b + dot(omega)_b^and r_i + omega_b^and v_b + (omega_b^and)^2 r_i]\
+&= sum_i frak(m)_i r_i^and [dot(omega)_b^and r_i + (omega_b^and)^2 r_i]\
+&= sum_i frak(m)_i [- (r_i^and)^2 dot(omega)_b - omega_b^and (r_i^and)^2omega_b]\
+&= [- sum_i frak(m)_i (r_i^and)^2 ]dot(omega)_b + omega_b^and [- sum_i frak(m)_i (r_i^and)^2 ] omega_b\
+&= cal(I)_b dot(omega)_b + omega_b^and cal(I)_b omega_b $
+
+其中 $cal(I)_b = - sum_i frak(m)_i (r_i^and)^2 in RR^(3 times 3)$ 是*惯性矩阵*( $cal(I)$ 是花体字母 I)与转动惯量等价，这样我们便得到了描述力矩的*欧拉旋转公式*。
+
+而对于惯性矩阵，展开有如下形式，
+$ cal(I)_b &= mat(sum_i frak(m)_i (y_i^2+z_i^2), -sum_i frak(m)_i x_i y_i, -sum_i frak(m)_i x_i z_i;-sum_i frak(m)_i x_i y_i, sum_i frak(m)_i (x_i^2+z_i^2),-sum_i frak(m)_i y_i z_i ; -sum_i frak(m)_i x_i z_i, -sum_i frak(m)_i y_i z_i , sum_i frak(m)_i (x_i^2+y_i^2))\
+&= mat(cal(I)_(x x), cal(I)_(x y), cal(I)_(x z);cal(I)_(x y), cal(I)_(y y), cal(I)_(y z);cal(I)_(x z),cal(I)_(y z), cal(I)_(z z)) $
+
+对于连续刚体，可以得到积分形式下的惯性矩阵，然而并非我们所关注的重点，因此省略跳过，读者可自行尝试。
+
+由此我们可以看到，在坐标系{b}下，因为非惯性系的旋转，而引入了惯性力项，这也就意味着，我们可以直接将刚体所受到的客观的力带入进行求解即可，而无需考虑在非惯性系下引入的惯性力。
+
+接下来，我们要将牛顿欧拉公式进行统一，使用力旋量对其进行统一描述。
+
+在惯性系中，牛顿第二定律可以写作如下形式，
+$ cal(F) = ("d"cal(P))/("d"t) $
+
+其中，$cal(P)$ 为*动量旋量*满足，
+$ cal(P) = MM cal(V) $
+
+其中，$MM$ 为*空间惯性矩阵*满足，
+$ MM = mat(cal(I), 0; 0, frak(m)I) in RR^(6 times 6) $
+
+因此，动量旋量可以写作，
+$ cal(P) = MM cal(V) = mat(cal(I), 0; 0, frak(m)I)mat(omega; v) = mat(cal(I)omega; frak(m)v) $
+
+设体坐标系下动量旋量为 $cal(P)_b$，惯性系下动量旋量为 $cal(P)_s$，惯性系到体坐标系的变换矩阵为 $g$，动量旋量与力旋量协变，因此变换公式相同，
+$ cal(F)_b = ["Ad"_g]^T cal(F)_s\
+cal(P)_b = ["Ad"_g]^T cal(P)_s $
+
+根据惯性系中的牛顿第二定律，
+$ cal(F)_b = ["Ad"_g]^T "d"/("d"t) (["Ad"_(g^(-1))]^T cal(P)_b) $
+
+展开可以得到，
+$ cal(F)_b = ["Ad"_g]^T ("d"/("d"t)(["Ad"_(g^(-1))]^T) cal(P)_b + ["Ad"_(g^(-1))]^T "d"/("d"t) cal(P)_b) $
+
+现在我们回顾第一章提及的李代数伴随表示的定义，存在如下结论，
+$ "d"/("d"t)"Ad"_(g(t)) = "Ad"_(g(t))circle.small "ad"_(g^(-1) (t) dot(g)(t)) $
+
+其中 $"ad"$ 表示李代数伴随表示，根据体坐标系下运动旋量的定义 $cal(V)_b = g^(-1)dot(g)$ ，上式可以写作，
+$ "d"/("d"t)"Ad"_(g) = "Ad"_(g)circle.small "ad"_(cal(V)_b) $
+
+根据李群伴随表示的性质，
+$ "Ad"_g  "Ad"_(g^(-1)) = I $
+
+对两边同时求导，可以得到，
+$ "d"/("d"t)("Ad"_g) "Ad"_(g^(-1)) + "Ad"_g  "d"/("d"t)("Ad"_(g^(-1))) = 0 $
+
+进而有，
+$ "d"/("d"t)("Ad"_(g^(-1))) = - "Ad"_(g^(-1)) ("d"/("d"t)("Ad"_g)) "Ad"_(g^(-1)) = - "ad"_(cal(V)_b) "Ad"_(g^(-1)) $
+
+两边同时转置，
+$ "d"/("d"t)["Ad"_(g^(-1))]^T = - ["Ad"_(g^(-1))]^T ["ad"_(cal(V)_b)]^T $
+
+带回公式(3.33)有，
+$ cal(F)_b = "d"/("d"t) cal(P)_b - ["ad"_(cal(V)_b)]^T cal(P)_b $
+
+将动量旋量展开，因为在体坐标系下的空间惯性矩阵与时间无关，不发生改变，因此带入可得到*牛顿欧拉公式的统一形式*，
+$ cal(F)_b = MM_s dot(cal(V))_b - ["ad"_(cal(V)_b)]^T MM_s cal(V)_b $
+
+其中，$["ad"_(cal(V)_b)]$ 是李代数伴随表示矩阵，展开为，
+$ ["ad"_(cal(V)_b)] = mat(omega_b^and, 0; v_b^and, omega_b^and) $
+
+不过需要强调的一点是，牛顿欧拉公式统一形式中，我们假设了空间惯性矩阵无关于时间，实际上，在一定的应用场景下，刚体运动的运动会导致质心相对于刚体的位置发生偏移，而这会引入空间惯性矩阵的偏移项，会使得牛顿欧拉公式计算变得复杂，所以在处理这类时变质心偏移的问题时，会通过拉格朗日力学的符号预计算来自动地处理这种问题。
+
+在一般的机器人动力学的场景下，厂商更多地会根据自家的机器人构型选择不同的动力学方法或者混合二者同时使用，保证高实时性的同时，以及更加稳定的控制效果。
+
+== Inverse Dynamics(逆动力学)
+
+== Forward Dynamics(前向动力学)
 
 = 轨迹生成
 
