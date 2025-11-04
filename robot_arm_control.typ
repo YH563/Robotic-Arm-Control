@@ -544,7 +544,11 @@ $ dot(T)T^(-1) &= mat(dot(R), dot(p); 0,1)mat(R^T, -R^T p; 0,1)\
 其中 $omega_s$ 为空间坐标系下的角速度，$v_s$ 为空间坐标系下的线速度，满足
 $ v_s = dot(p) - omega_s times p $
 
-这种表述，在物理直观上，可以看作是在固定坐标系中看到的、刚体上瞬时与固定坐标系原点重合的那个点的速度，而非我们直观理解的刚体上的固定点的速度(这种情况下线速度为 $v_p = dot(p) + omega times p$ )，这种定义下，保证了运动旋量的坐标系不变性，在基坐标系下，刚体位置的改变并不会影响运动旋量的变化，也就是“左平移不变量”。
+由此得到的定义是在空间坐标系观察下本体坐标系原点的速度。如果我们希望得到刚体上某点 $q$ 的速度的话，根据线速度定义，
+
+$ v_q = dot(p) + omega_s times (q - p) = v_s + omega_s times q $
+
+这种定义的优势在于，给出了在给定坐标系下唯一的“旋转轴”，不随坐标系的变化而改变，同时也便于我们计算刚体上点的运动速度。在后续的运动学中，使用这种构造方式，能够给出简洁统一的公式表达。
 
 因此，我们定义在空间坐标系下的*空间运动旋量(Space Twist)* $cal(V)_s$ 为，
 $ cal(V)_s = mat(omega_s; v_s) in RR^6\
@@ -552,7 +556,7 @@ cal(V)_s^and = dot(T)T^(-1) =mat(omega_s^and, v_s; 0,0) $
 
 *此处的角速度与线速度排列同前文相反*。
 
-在得到空间运动旋量后，我们希望能够得到本体坐标系下的本体运动旋量，而运动旋量的要求在对应坐标系下的保持不变性，这种不变性现在要从空间坐标系下传递到本体坐标系下，可以通过伴随表示实现，即为，
+通过伴随表示，我们可以得到在本体坐标系下刚体的运动描述。
 
 $ cal(V)_b^and &=  "Ad"_(T_(b s))cal(V)_s^and = "Ad"_(T_(s b)^(-1))cal(V)_s^and = T^(-1)dot(T) $
 
@@ -832,10 +836,10 @@ $ J_s (theta) = ["Ad"_(T_(s b))] J_b (theta) $
 $ theta = (theta_1, theta_2, dots, theta_n)^T $
 
 其末端的位姿为 $x in RR^6$，设末端受到广义力
-$ cal(F) = (f_x, f_y, f_z, tau_x, tau_y, tau_z)^T $
+$ cal(F) = (f_x, f_y, f_z, m_x, m_y, m_z)^T $
 
 关节力矩为
-$ tau = (tau_1, tau_2, dots, tau_n)^T $
+$ m = (m_1, m_2, dots, m_n)^T $
 
 我们考虑在惯性系下，且不考虑重力的情况，若机械臂系统要保持平衡，那么根据虚功原理，所有作用在系统上的力在任意虚位移上做的总虚功为0。
 
@@ -843,15 +847,15 @@ $ tau = (tau_1, tau_2, dots, tau_n)^T $
 $ delta x = J(theta) delta theta $
 
 那么根据虚功原理可得，
-$ tau^T delta theta + cal(F)^T delta x = 0\
-[tau^T + cal(F)^T J(theta)] delta theta = 0 $
+$ m^T delta theta + cal(F)^T delta x = 0\
+[m^T + cal(F)^T J(theta)] delta theta = 0 $
 
 化简可得，关节力矩为，
-$ tau = - J^T (theta) cal(F) $
+$ m = - J^T (theta) cal(F) $
 
 因此我们得到了*机械臂静力学关系*如下(通常省略负号)，
 
-$ tau = J^T (theta) cal(F) $
+$ m = J^T (theta) cal(F) $
 
 === Singularity Analysis(奇点分析)
 
@@ -1377,9 +1381,9 @@ $ ["ad"_(cal(V)_b)] = mat(omega_b^and, 0; v_b^and, omega_b^and) $
 
 == Forward Dynamics(前向动力学)
 
-= 轨迹生成
+= Trajectory Generation(轨迹生成)
 
-= 运动规划
+= Motion Planning(路径规划)
 
-= 机器人控制
+= Robot Control(机器人控制)
 
