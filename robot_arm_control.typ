@@ -1429,6 +1429,32 @@ $ "ad"_(dot(T)_(i, i-1)T_(i, i-1)^(-1)) (cal(V)_i^and - cal(A)_i^and dot(theta)_
 最终写作矩阵形式带回原式，得到加速度计算公式如下，
 $ dot(cal(V))_i = cal(A)_i dot.double(theta)_i + ["Ad"_(T_(i, i-1))]dot(cal(V))_(i-1) + ["ad"_(cal(V)_i^and)]cal(A)_i dot(theta)_i $
 
+考虑连杆 ${i}$ 受到的合力，由两部分组成，分别是一部分用于克服自身的惯性，可以理解为自身的动力，一部分用于支撑后续连杆的惯性，可以理解为后面的连杆所带来的阻力，所以表述为，
+$ underbrace(cal(F)_i,"自身惯性") -underbrace("Ad"_(T_(i+1, i))^T cal(F)_(i+1),"后续阻力") $
+
+将其带回牛顿欧拉公式，我们可以得到，
+$ MM_i dot(cal(V))_i - ["ad"_(cal(V)_i^and)]^T MM_i cal(V)_i = cal(F)_i - ["Ad"_(T_(i+1, i))]^T cal(F)_(i+1) $
+
+对于单个连杆，可以认为其只有一个自由度，而其所受到的力矩是力旋量在转轴方向上的投影，所以我们可以得到连杆所受到的力矩为，
+$ m_i = cal(F)_(i)^T cal(A)_i $
+
+到此，我们就完成了对逆动力学数学原理的推导。
+
+=== 逆动力学算法
+
+*初始化*：固定基坐标系{0}，将每个连杆的坐标系 ${1}，dots，{n}$ 固定到连杆的质心处，计算当 $theta_i=0$ 时的 $M_(i, i-1)$，计算 $cal(A)_i$，计算惯性矩阵 $MM_i$，定义在基坐标系下的运动旋量 $cal(V)_0$ (一般是0)，并定义加速度 $dot(cal(V))_0=mat(0;-g)$，将重力加速度带入，便于后续计算时无需考虑重力影响。
+
+*前向迭代*：给出 $theta,dot(theta), dot.double(theta)$，遍历 $i=1,dots,n$，计算如下公式，
+$ T_(i, i-1)=exp(-cal(A)_i theta_i)M_(i, i-1) $
+$ cal(V)_i = "Ad"_(T_(i, i-1))(cal(V)_(i-1)) + cal(A)_i dot(theta)_i $
+$ dot(cal(V))_i = cal(A)_i dot.double(theta)_i + ["Ad"_(T_(i, i-1))]dot(cal(V))_(i-1) + ["ad"_(cal(V)_i^and)]cal(A)_i dot(theta)_i $
+
+*反向迭代*：遍历 $i=1,dots,n$，计算如下公式，
+$ cal(F)_i = MM_i dot(cal(V))_i - ["ad"_(cal(V)_i^and)]^T MM_i cal(V)_i + ["Ad"_(T_(i+1, i))]^T cal(F)_(i+1) $
+$ m_i = cal(F)_(i)^T cal(A)_i $
+
+这样，便在 $O(n)$ 的复杂度下计算得到了每个连杆受到的力矩大小，便于我们对机械臂的运动更好地调控。
+
 == Forward Dynamics(前向动力学)
 
 #pagebreak()
